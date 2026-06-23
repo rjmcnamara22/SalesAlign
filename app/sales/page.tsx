@@ -1,4 +1,4 @@
-import { createDailySales } from "@/app/actions/dailySales";
+import { DailySalesForm } from "@/components/DailySalesForm";
 import { prisma } from "@/lib/database/prisma";
 
 function formatCurrency(cents: number | null) {
@@ -23,90 +23,7 @@ export default async function SalesPage() {
     <main className="mx-auto max-w-5xl p-8">
       <h1 className="text-3xl font-bold">Daily Sales</h1>
 
-      <form
-        action={createDailySales}
-        className="mt-8 grid gap-4 rounded-lg border p-6"
-      >
-        <div>
-          <label htmlFor="businessDate" className="mb-1 block font-medium">
-            Business date
-          </label>
-
-          <input
-            id="businessDate"
-            name="businessDate"
-            type="date"
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="grossSales" className="mb-1 block font-medium">
-            Gross sales
-          </label>
-
-          <input
-            id="grossSales"
-            name="grossSales"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="netSales" className="mb-1 block font-medium">
-            Net sales
-          </label>
-
-          <input
-            id="netSales"
-            name="netSales"
-            type="number"
-            min="0"
-            step="0.01"
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="transactionCount" className="mb-1 block font-medium">
-            Transaction count
-          </label>
-
-          <input
-            id="transactionCount"
-            name="transactionCount"
-            type="number"
-            min="0"
-            step="1"
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="notes" className="mb-1 block font-medium">
-            Notes
-          </label>
-
-          <textarea
-            id="notes"
-            name="notes"
-            rows={3}
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="rounded bg-black px-4 py-2 font-medium text-white"
-        >
-          Save daily sales
-        </button>
-      </form>
+      <DailySalesForm />
 
       <section className="mt-10">
         <h2 className="text-2xl font-semibold">Sales records</h2>
