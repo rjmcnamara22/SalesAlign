@@ -1,16 +1,12 @@
-import { subDays } from "date-fns";
-
 const DAYS_IN_52_WEEKS = 364;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/**
- * Returns the weekday-aligned comparison date for a prior year.
- *
- * Subtracting 364 days preserves the actual day of the week instead of the date.
- */
 export function getComparableDate(currentDate: Date, yearsBack = 1): Date {
   if (!Number.isInteger(yearsBack) || yearsBack < 1) {
     throw new Error("yearsBack must be a positive integer");
   }
 
-  return subDays(currentDate, DAYS_IN_52_WEEKS * yearsBack);
+  return new Date(
+    currentDate.getTime() - DAYS_IN_52_WEEKS * yearsBack * MILLISECONDS_PER_DAY,
+  );
 }
