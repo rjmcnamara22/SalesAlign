@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { CalendarGrid } from "@/components/calendar/CalendarGrid";
+import { getMonthCalendarDays } from "@/lib/calendar/getMonthCalendarDays";
+import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { prisma } from "@/lib/database/prisma";
 
 const MONTH_NAMES = [
@@ -47,16 +49,6 @@ function getValidCalendarDate(
   };
 }
 
-function getMonthDateRange(year: number, monthIndex: number) {
-  const startDate = new Date(Date.UTC(year, monthIndex, 1));
-  const endDate = new Date(Date.UTC(year, monthIndex + 1, 1));
-
-  return {
-    startDate,
-    endDate,
-  };
-}
-
 function getAdjacentMonth(year: number, monthIndex: number, offset: -1 | 1) {
   const date = new Date(year, monthIndex + offset, 1);
 
@@ -64,6 +56,12 @@ function getAdjacentMonth(year: number, monthIndex: number, offset: -1 | 1) {
     year: date.getFullYear(),
     month: date.getMonth() + 1,
   };
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
 }
 
 export default async function CalendarPage({
@@ -76,13 +74,19 @@ export default async function CalendarPage({
   const previousMonth = getAdjacentMonth(year, monthIndex, -1);
   const nextMonth = getAdjacentMonth(year, monthIndex, 1);
 
-  const { startDate, endDate } = getMonthDateRange(year, monthIndex);
+  const calendarDays = getMonthCalendarDays(year, monthIndex);
+
+  const visibleStartDate = calendarDays[0].date;
+  const visibleEndDate = calendarDays[calendarDays.length - 1].date;
+
+  const comparableStartDate = getComparableDate(visibleStartDate);
+  const queryEndDate = addDays(visibleEndDate, 1);
 
   const salesRecords = await prisma.dailySales.findMany({
     where: {
       businessDate: {
-        gte: startDate,
-        lt: endDate,
+        gte: comparableStartDate,
+        lt: queryEndDate,
       },
     },
     select: {
@@ -105,7 +109,8 @@ export default async function CalendarPage({
           </h1>
 
           <p className="mt-2 text-gray-600">
-            Daily gross sales displayed in a monthly calendar layout.
+            Daily gross sales compared with the weekday-aligned date from the
+            prior year.
           </p>
         </div>
 

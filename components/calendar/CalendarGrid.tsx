@@ -3,6 +3,7 @@ import {
   getMonthCalendarDays,
   type CalendarDay,
 } from "@/lib/calendar/getMonthCalendarDays";
+import { getComparableDate } from "@/lib/comparison/getComparableDate";
 
 type DailySalesRecord = {
   businessDate: Date;
@@ -50,12 +51,20 @@ export function CalendarGrid({
           const dateKey = formatDateKey(calendarDay.date);
           const salesRecord = salesByDate.get(dateKey);
 
+          const comparableDate = getComparableDate(calendarDay.date);
+          const comparableDateKey = formatDateKey(comparableDate);
+          const comparableSalesRecord = salesByDate.get(comparableDateKey);
+
           return (
             <CalendarDayCell
               key={dateKey}
               date={calendarDay.date}
               isCurrentMonth={calendarDay.isCurrentMonth}
               grossSalesCents={salesRecord?.grossSalesCents ?? null}
+              comparableDate={comparableDate}
+              comparableGrossSalesCents={
+                comparableSalesRecord?.grossSalesCents ?? null
+              }
             />
           );
         })}
