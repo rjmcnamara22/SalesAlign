@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DailySalesEditForm } from "@/components/DailySalesEditForm";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { prisma } from "@/lib/database/prisma";
 
@@ -101,6 +102,7 @@ export default async function CalendarDayPage({
       },
     },
     select: {
+      id: true,
       businessDate: true,
       grossSalesCents: true,
       netSalesCents: true,
@@ -313,6 +315,19 @@ export default async function CalendarDayPage({
             </p>
           </div>
         </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border p-6">
+        <h2 className="text-xl font-semibold">Edit current day</h2>
+
+        {currentRecord ? (
+          <DailySalesEditForm record={currentRecord} />
+        ) : (
+          <p className="mt-3 text-gray-600">
+            No sales record exists for this day yet. Add one from the sales
+            entry page.
+          </p>
+        )}
       </section>
 
       <section className="mt-8 rounded-lg border p-6">

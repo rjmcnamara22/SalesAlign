@@ -102,3 +102,91 @@ export async function createDailySales(
     };
   }
 }
+
+const updateDailySalesSchema = z.object({
+  id: z.string().min(1, "Missing sales record ID"),
+
+  grossSales: z.coerce.number().min(0, "Gross sales cannot be negative"),
+
+  netSales: z
+    .union([
+      z.literal(""),
+      z.coerce.number().min(0, "Net sales cannot be negative"),
+    ])
+    .optional(),
+
+  transactionCount: z
+    .union([
+      z.literal(""),
+      z.coerce
+        .number()
+        .int("Transaction count must be a whole number")
+        .min(0, "Transaction count cannot be negative"),
+    ])
+    .optional(),
+
+  notes: z.string().trim().max(500).optional(),
+});
+
+export type UpdateDailySalesState = {
+  success: boolean;
+  message: string;
+};
+
+export async function updateDailySales(
+  previousState: UpdateDailySalesState,
+  formData: FormData,
+): Promise<UpdateDailySalesState> {
+  const result = updateDailySalesSchema.safeParse({
+    id: formData.get("id"),
+    grossSales: formData.get("grossSales"),
+    netSales: formData.get("netSales"),
+    transactionCount: formData.get("transactionCount"),
+    notes: formData.get("notes"),
+  });
+
+  if (!result.success) {
+    return {
+      success: false,
+      message: result.error.issues[0]?.message ?? "Invalid sales data",
+    };
+  }
+
+  const { id, grossSales, netSales, transactionCount, notes } = result.data;
+
+  try {
+    await prisma.dailySales.update({
+      where: {
+        id,
+      },
+      data: {
+        grossSalesCents: Math.round(grossSales * 100),
+        netSalesCents:
+          netSales === "" || netSales === undefined
+            ? null
+            : Math.round(netSales * 100),
+        transactionCount:
+          transactionCount === "" || transactionCount === undefined
+            ? null
+            : transactionCount,
+        notes: notes || null,
+      },
+    });
+
+    revalidatePath("/sales");
+    revalidatePath("/calendar");
+    revalidatePath("/calendar/day");
+
+    return {
+      success: true,
+      message: "Daily sales record updated.",
+    };
+  } catch (error) {
+    console.error("Failed to update daily sales record:", error);
+
+    return {
+      success: false,
+      message: "Unable to update the daily sales record.",
+    };
+  }
+}
