@@ -1,11 +1,12 @@
-import { importDailySalesFromReporting } from "@/lib/square/importDailySalesFromReporting";
+import { importDailySalesRangeFromReporting } from "@/lib/square/importDailySalesRangeFromReporting";
 
-async function importSquareSales(formData: FormData) {
+async function importSquareSalesRange(formData: FormData) {
   "use server";
 
-  const businessDate = String(formData.get("businessDate") ?? "");
+  const startDate = String(formData.get("startDate") ?? "");
+  const endDate = String(formData.get("endDate") ?? "");
 
-  await importDailySalesFromReporting(businessDate);
+  await importDailySalesRangeFromReporting(startDate, endDate);
 }
 
 export default function SquareImportPage() {
@@ -14,21 +15,37 @@ export default function SquareImportPage() {
       <h1 className="text-3xl font-bold">Square Import</h1>
 
       <p className="mt-2 text-gray-600">
-        Import one day of Square sales into the daily sales table.
+        Import Square sales records for a selected date range. For large
+        historical backfills, import one month at a time to avoid request
+        timeouts.
       </p>
 
       <form
-        action={importSquareSales}
+        action={importSquareSalesRange}
         className="mt-8 grid gap-4 rounded-lg border p-6"
       >
         <div>
-          <label htmlFor="businessDate" className="mb-1 block font-medium">
-            Business date
+          <label htmlFor="startDate" className="mb-1 block font-medium">
+            Start date
           </label>
 
           <input
-            id="businessDate"
-            name="businessDate"
+            id="startDate"
+            name="startDate"
+            type="date"
+            required
+            className="w-full rounded border px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="endDate" className="mb-1 block font-medium">
+            End date
+          </label>
+
+          <input
+            id="endDate"
+            name="endDate"
             type="date"
             required
             className="w-full rounded border px-3 py-2"
@@ -39,7 +56,7 @@ export default function SquareImportPage() {
           type="submit"
           className="rounded bg-black px-4 py-2 font-medium text-white"
         >
-          Import from Square
+          Import date range
         </button>
       </form>
     </main>
