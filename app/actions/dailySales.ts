@@ -103,6 +103,55 @@ export async function createDailySales(
   }
 }
 
+const deleteDailySalesSchema = z.object({
+  id: z.string().min(1, "Missing sales record ID"),
+});
+
+export type DeleteDailySalesState = {
+  success: boolean;
+  message: string;
+};
+
+export async function deleteDailySales(
+  previousState: DeleteDailySalesState,
+  formData: FormData,
+): Promise<DeleteDailySalesState> {
+  const result = deleteDailySalesSchema.safeParse({
+    id: formData.get("id"),
+  });
+
+  if (!result.success) {
+    return {
+      success: false,
+      message: result.error.issues[0]?.message ?? "Invalid sales record",
+    };
+  }
+
+  try {
+    await prisma.dailySales.delete({
+      where: {
+        id: result.data.id,
+      },
+    });
+
+    revalidatePath("/sales");
+    revalidatePath("/calendar");
+    revalidatePath("/calendar/day");
+
+    return {
+      success: true,
+      message: "Daily sales record deleted.",
+    };
+  } catch (error) {
+    console.error("Failed to delete daily sales record:", error);
+
+    return {
+      success: false,
+      message: "Unable to delete the daily sales record.",
+    };
+  }
+}
+
 const updateDailySalesSchema = z.object({
   id: z.string().min(1, "Missing sales record ID"),
 
