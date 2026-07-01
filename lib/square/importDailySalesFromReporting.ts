@@ -79,19 +79,16 @@ export async function importDailySalesFromReporting(
     body: JSON.stringify({
       query: {
         measures: [
-          "Sales.top_line_product_sales",
           "Sales.net_sales",
-          "Sales.order_count",
-          "Sales.discounts_amount",
-          "Sales.tips_amount",
           "Sales.sales_tax_amount",
+          "Sales.order_count",
         ],
-        dimensions: ["Sales.local_date", "Sales.location_id"],
+        dimensions: ["Sales.reporting_day", "Sales.location_id"],
         filters: [
           {
-            member: "Sales.local_date",
+            member: "Sales.reporting_day",
             operator: "equals",
-            values: [businessDate],
+            values: [`${businessDate}T00:00:00.000`],
           },
           {
             member: "Sales.location_id",
@@ -114,9 +111,11 @@ export async function importDailySalesFromReporting(
   const payload = (await response.json()) as ReportingApiResponse;
   const row = payload.data?.[0];
 
-  const grossSalesCents = toCents(row?.["Sales.top_line_product_sales"]);
   const netSalesCents = toNullableCents(row?.["Sales.net_sales"]);
+  const taxesCents = toNullableCents(row?.["Sales.sales_tax_amount"]);
   const transactionCount = toNullableNumber(row?.["Sales.order_count"]);
+
+  const grossSalesCents = (netSalesCents ?? 0) + (taxesCents ?? 0);
 
   await prisma.dailySales.upsert({
     where: {
