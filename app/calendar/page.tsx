@@ -79,7 +79,9 @@ export default async function CalendarPage({
   const visibleStartDate = calendarDays[0].date;
   const visibleEndDate = calendarDays[calendarDays.length - 1].date;
 
-  const comparableStartDate = getComparableDate(visibleStartDate);
+  const YEARS_BACK = 8;
+
+  const comparableStartDate = getComparableDate(visibleStartDate, YEARS_BACK);
   const queryEndDate = addDays(visibleEndDate, 1);
 
   const salesRecords = await prisma.dailySales.findMany({
@@ -135,6 +137,7 @@ export default async function CalendarPage({
         year={year}
         monthIndex={monthIndex}
         salesRecords={salesRecords}
+        yearsBack={YEARS_BACK}
       />
     </main>
   );

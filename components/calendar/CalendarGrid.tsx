@@ -14,6 +14,7 @@ type CalendarGridProps = {
   year: number;
   monthIndex: number;
   salesRecords: DailySalesRecord[];
+  yearsBack?: number;
 };
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -26,6 +27,7 @@ export function CalendarGrid({
   year,
   monthIndex,
   salesRecords,
+  yearsBack = 8,
 }: CalendarGridProps) {
   const calendarDays: CalendarDay[] = getMonthCalendarDays(year, monthIndex);
 
@@ -51,9 +53,22 @@ export function CalendarGrid({
           const dateKey = formatDateKey(calendarDay.date);
           const salesRecord = salesByDate.get(dateKey);
 
-          const comparableDate = getComparableDate(calendarDay.date);
-          const comparableDateKey = formatDateKey(comparableDate);
-          const comparableSalesRecord = salesByDate.get(comparableDateKey);
+          const comparisons = Array.from({ length: yearsBack }, (_, index) => {
+            const comparableDate = getComparableDate(
+              calendarDay.date,
+              index + 1,
+            );
+
+            const comparableRecord = salesByDate.get(
+              formatDateKey(comparableDate),
+            );
+
+            return {
+              yearLabel: comparableDate.getUTCFullYear(),
+              date: comparableDate,
+              grossSalesCents: comparableRecord?.grossSalesCents ?? null,
+            };
+          }).filter((comparison) => comparison.grossSalesCents !== null);
 
           return (
             <CalendarDayCell
@@ -61,10 +76,7 @@ export function CalendarGrid({
               date={calendarDay.date}
               isCurrentMonth={calendarDay.isCurrentMonth}
               grossSalesCents={salesRecord?.grossSalesCents ?? null}
-              comparableDate={comparableDate}
-              comparableGrossSalesCents={
-                comparableSalesRecord?.grossSalesCents ?? null
-              }
+              comparisons={comparisons}
             />
           );
         })}

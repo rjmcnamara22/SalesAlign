@@ -1,9 +1,16 @@
+import Link from "next/link";
+
+type CalendarCellComparison = {
+  yearLabel: number;
+  date: Date;
+  grossSalesCents: number | null;
+};
+
 type CalendarDayCellProps = {
   date: Date;
   isCurrentMonth: boolean;
   grossSalesCents: number | null;
-  comparableDate: Date;
-  comparableGrossSalesCents: number | null;
+  comparisons: CalendarCellComparison[];
 };
 
 function formatCurrency(cents: number | null) {
@@ -22,48 +29,19 @@ function formatDate(date: Date) {
   return date.toISOString().slice(5, 10);
 }
 
-function formatDifference(cents: number | null) {
-  if (cents === null) {
-    return "—";
-  }
-
-  const formattedValue = formatCurrency(Math.abs(cents));
-
-  return cents >= 0 ? `+${formattedValue}` : `-${formattedValue}`;
-}
-
-function formatPercentage(value: number | null) {
-  if (value === null) {
-    return "—";
-  }
-
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
-}
-
 export function CalendarDayCell({
   date,
   isCurrentMonth,
   grossSalesCents,
-  comparableDate,
-  comparableGrossSalesCents,
+  comparisons,
 }: CalendarDayCellProps) {
   const dayNumber = date.getDate();
-
-  const differenceCents =
-    grossSalesCents !== null && comparableGrossSalesCents !== null
-      ? grossSalesCents - comparableGrossSalesCents
-      : null;
-
-  const percentageChange =
-    differenceCents !== null &&
-    comparableGrossSalesCents !== null &&
-    comparableGrossSalesCents !== 0
-      ? (differenceCents / comparableGrossSalesCents) * 100
-      : null;
+  const dateKey = date.toISOString().slice(0, 10);
 
   return (
-    <div
-      className={`min-h-36 border p-3 ${
+    <Link
+      href={`/calendar/day?date=${dateKey}`}
+      className={`block min-h-44 border p-3 transition hover:bg-gray-100 ${
         isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-400"
       }`}
     >
@@ -73,35 +51,38 @@ export function CalendarDayCell({
 
       <div className="mt-3 space-y-2 text-xs">
         <div>
-          <p className="text-gray-500">Sales</p>
+          <p className="text-gray-500">Current</p>
           <p className="text-sm font-semibold text-gray-900">
             {formatCurrency(grossSalesCents)}
           </p>
         </div>
 
-        <div>
-          <p className="text-gray-500">Vs {formatDate(comparableDate)}</p>
-          <p className="font-medium">
-            {formatCurrency(comparableGrossSalesCents)}
-          </p>
-        </div>
+        {comparisons.length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-gray-500">Previous years</p>
 
-        <div>
-          <p className="text-gray-500">Change</p>
-          <p
-            className={`font-semibold ${
-              differenceCents === null
-                ? "text-gray-400"
-                : differenceCents >= 0
-                  ? "text-green-700"
-                  : "text-red-700"
-            }`}
-          >
-            {formatDifference(differenceCents)} /{" "}
-            {formatPercentage(percentageChange)}
-          </p>
-        </div>
+            {comparisons.map((comparison) => (
+              <div
+                key={comparison.date.toISOString()}
+                className="flex justify-between gap-2"
+              >
+                <span>
+                  {comparison.yearLabel}{" "}
+                  <span className="text-gray-400">
+                    ({formatDate(comparison.date)})
+                  </span>
+                </span>
+
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(comparison.grossSalesCents)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400">No prior comparison data</p>
+        )}
       </div>
-    </div>
+    </Link>
   );
 }
