@@ -4,10 +4,20 @@ import { notFound } from "next/navigation";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { prisma } from "@/lib/database/prisma";
 
+const YEARS_BACK = 8;
+
 type CalendarDayPageProps = {
   searchParams: Promise<{
     date?: string;
   }>;
+};
+
+type ComparableYearRow = {
+  yearLabel: number;
+  comparableDate: Date;
+  grossSalesCents: number | null;
+  differenceCents: number | null;
+  percentageChange: number | null;
 };
 
 function isValidDateString(value: string | undefined) {
@@ -61,6 +71,14 @@ function formatPercentage(value: number | null) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
+function getComparisonTextColor(value: number | null) {
+  if (value === null) {
+    return "text-gray-400";
+  }
+
+  return value >= 0 ? "text-green-700" : "text-red-700";
+}
+
 export default async function CalendarDayPage({
   searchParams,
 }: CalendarDayPageProps) {
@@ -71,40 +89,70 @@ export default async function CalendarDayPage({
   }
 
   const businessDate = parseBusinessDate(params.date!);
-  const comparableDate = getComparableDate(businessDate);
 
-  const [currentRecord, comparableRecord] = await Promise.all([
-    prisma.dailySales.findUnique({
-      where: {
-        businessDate,
+  const comparableDates = Array.from({ length: YEARS_BACK }, (_, index) =>
+    getComparableDate(businessDate, index + 1),
+  );
+
+  const records = await prisma.dailySales.findMany({
+    where: {
+      businessDate: {
+        in: [businessDate, ...comparableDates],
       },
-    }),
+    },
+    select: {
+      businessDate: true,
+      grossSalesCents: true,
+      netSalesCents: true,
+      transactionCount: true,
+      notes: true,
+    },
+  });
 
-    prisma.dailySales.findUnique({
-      where: {
-        businessDate: comparableDate,
-      },
-    }),
-  ]);
+  const recordsByDate = new Map(
+    records.map((record) => [formatDate(record.businessDate), record]),
+  );
 
-  const differenceCents =
-    currentRecord && comparableRecord
-      ? currentRecord.grossSalesCents - comparableRecord.grossSalesCents
-      : null;
+  const currentRecord = recordsByDate.get(formatDate(businessDate));
 
-  const percentageChange =
-    differenceCents !== null &&
-    comparableRecord &&
-    comparableRecord.grossSalesCents !== 0
-      ? (differenceCents / comparableRecord.grossSalesCents) * 100
-      : null;
+  const comparableRows: ComparableYearRow[] = comparableDates.map(
+    (comparableDate) => {
+      const comparableRecord = recordsByDate.get(formatDate(comparableDate));
+
+      const differenceCents =
+        currentRecord && comparableRecord
+          ? currentRecord.grossSalesCents - comparableRecord.grossSalesCents
+          : null;
+
+      const percentageChange =
+        differenceCents !== null &&
+        comparableRecord &&
+        comparableRecord.grossSalesCents !== 0
+          ? (differenceCents / comparableRecord.grossSalesCents) * 100
+          : null;
+
+      return {
+        yearLabel: comparableDate.getUTCFullYear(),
+        comparableDate,
+        grossSalesCents: comparableRecord?.grossSalesCents ?? null,
+        differenceCents,
+        percentageChange,
+      };
+    },
+  );
+
+  const rowsWithData = comparableRows.filter(
+    (row) => row.grossSalesCents !== null,
+  );
+
+  const mostRecentComparableRow = rowsWithData[0] ?? null;
 
   const calendarHref = `/calendar?year=${businessDate.getUTCFullYear()}&month=${
     businessDate.getUTCMonth() + 1
   }`;
 
   return (
-    <main className="mx-auto max-w-4xl p-8">
+    <main className="mx-auto max-w-5xl p-8">
       <Link
         href={calendarHref}
         className="text-sm font-medium text-gray-600 hover:text-gray-900"
@@ -120,7 +168,7 @@ export default async function CalendarDayPage({
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Compared with {formatDisplayDate(comparableDate)}.
+          Multi-year weekday-aligned comparison for this business date.
         </p>
       </div>
 
@@ -138,47 +186,132 @@ export default async function CalendarDayPage({
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Comparable sales</p>
+          <p className="text-sm font-medium text-gray-500">
+            Most recent comparable sales
+          </p>
 
           <p className="mt-2 text-3xl font-bold">
-            {formatCurrency(comparableRecord?.grossSalesCents)}
+            {formatCurrency(mostRecentComparableRow?.grossSalesCents)}
           </p>
 
           <p className="mt-2 text-sm text-gray-500">
-            {formatDate(comparableDate)}
+            {mostRecentComparableRow
+              ? formatDate(mostRecentComparableRow.comparableDate)
+              : "No comparable record found"}
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Dollar difference</p>
+          <p className="text-sm font-medium text-gray-500">
+            Difference vs most recent comparable
+          </p>
 
           <p
-            className={`mt-2 text-3xl font-bold ${
-              differenceCents === null
-                ? "text-gray-400"
-                : differenceCents >= 0
-                  ? "text-green-700"
-                  : "text-red-700"
-            }`}
+            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
+              mostRecentComparableRow?.differenceCents ?? null,
+            )}`}
           >
-            {formatDifference(differenceCents)}
+            {formatDifference(mostRecentComparableRow?.differenceCents ?? null)}
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Percentage change</p>
+          <p className="text-sm font-medium text-gray-500">
+            Percentage change vs most recent comparable
+          </p>
 
           <p
-            className={`mt-2 text-3xl font-bold ${
-              percentageChange === null
-                ? "text-gray-400"
-                : percentageChange >= 0
-                  ? "text-green-700"
-                  : "text-red-700"
-            }`}
+            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
+              mostRecentComparableRow?.percentageChange ?? null,
+            )}`}
           >
-            {formatPercentage(percentageChange)}
+            {formatPercentage(
+              mostRecentComparableRow?.percentageChange ?? null,
+            )}
           </p>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border p-6">
+        <h2 className="text-xl font-semibold">Comparable years</h2>
+
+        {rowsWithData.length === 0 ? (
+          <p className="mt-4 text-gray-600">
+            No prior comparable sales records exist for this date.
+          </p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-3">Year</th>
+                  <th className="p-3">Comparable date</th>
+                  <th className="p-3">Sales</th>
+                  <th className="p-3">Difference</th>
+                  <th className="p-3">Change</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rowsWithData.map((row) => (
+                  <tr key={formatDate(row.comparableDate)} className="border-b">
+                    <td className="p-3">{row.yearLabel}</td>
+
+                    <td className="p-3">
+                      {formatDisplayDate(row.comparableDate)}
+                    </td>
+
+                    <td className="p-3">
+                      {formatCurrency(row.grossSalesCents)}
+                    </td>
+
+                    <td
+                      className={`p-3 font-medium ${getComparisonTextColor(
+                        row.differenceCents,
+                      )}`}
+                    >
+                      {formatDifference(row.differenceCents)}
+                    </td>
+
+                    <td
+                      className={`p-3 font-medium ${getComparisonTextColor(
+                        row.percentageChange,
+                      )}`}
+                    >
+                      {formatPercentage(row.percentageChange)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-8 rounded-lg border p-6">
+        <h2 className="text-xl font-semibold">Current day details</h2>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Net sales</p>
+            <p className="mt-1 text-lg font-semibold">
+              {formatCurrency(currentRecord?.netSalesCents)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-500">Transactions</p>
+            <p className="mt-1 text-lg font-semibold">
+              {currentRecord?.transactionCount ?? "—"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-500">Gross sales</p>
+            <p className="mt-1 text-lg font-semibold">
+              {formatCurrency(currentRecord?.grossSalesCents)}
+            </p>
+          </div>
         </div>
       </section>
 
