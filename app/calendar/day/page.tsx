@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DailySalesCreateForDateForm } from "@/components/DailySalesCreateForDateForm";
 import { DailySalesDeleteForm } from "@/components/DailySalesDeleteForm";
 import { DailySalesEditForm } from "@/components/DailySalesEditForm";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
@@ -319,39 +320,40 @@ export default async function CalendarDayPage({
       </section>
 
       <section className="mt-8 rounded-lg border p-6">
-        <h2 className="text-xl font-semibold">Edit current day</h2>
+        <h2 className="text-xl font-semibold">
+          {currentRecord ? "Edit sales record" : "Add sales record"}
+        </h2>
 
         {currentRecord ? (
           <DailySalesEditForm record={currentRecord} />
         ) : (
-          <p className="mt-3 text-gray-600">
-            No sales record exists for this day yet. Add one from the sales
-            entry page.
-          </p>
-        )}
-      </section>
-
-      <section className="mt-8 rounded-lg border border-red-200 p-6">
-        <h2 className="text-xl font-semibold text-red-800">
-          Delete sales record
-        </h2>
-
-        {currentRecord ? (
           <>
-            <p className="mt-2 text-sm text-gray-600">
-              Remove this daily sales record if it was entered incorrectly or
-              should no longer be included in reporting. This action cannot be
-              undone.
+            <p className="mt-3 text-gray-600">
+              No sales record exists for this day yet. Add one below.
             </p>
 
-            <DailySalesDeleteForm recordId={currentRecord.id} />
+            <DailySalesCreateForDateForm
+              businessDate={formatDate(businessDate)}
+            />
           </>
-        ) : (
-          <p className="mt-3 text-gray-600">
-            No sales record exists for this day.
-          </p>
         )}
       </section>
+
+      {currentRecord && (
+        <section className="mt-8 rounded-lg border border-red-200 p-6">
+          <h2 className="text-xl font-semibold text-red-800">
+            Delete sales record
+          </h2>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Remove this daily sales record if it was entered incorrectly or
+            should no longer be included in reporting. This action cannot be
+            undone.
+          </p>
+
+          <DailySalesDeleteForm recordId={currentRecord.id} />
+        </section>
+      )}
 
       <section className="mt-8 rounded-lg border p-6">
         <h2 className="text-xl font-semibold">Notes</h2>
