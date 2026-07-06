@@ -35,13 +35,13 @@ export function DailySalesForm() {
       </div>
 
       <div>
-        <label htmlFor="grossSales" className="mb-1 block font-medium">
-          Gross sales
+        <label htmlFor="salesTotal" className="mb-1 block font-medium">
+          Total Sales
         </label>
 
         <input
-          id="grossSales"
-          name="grossSales"
+          id="salesTotal"
+          name="salesTotal"
           type="number"
           min="0"
           step="0.01"
