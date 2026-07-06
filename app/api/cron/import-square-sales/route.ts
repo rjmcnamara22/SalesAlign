@@ -30,15 +30,10 @@ function subtractDays(date: Date, days: number) {
   return nextDate;
 }
 
-function getMostRecentClosedReportingDate() {
+function getPreviousReportingDate() {
   const now = new Date();
-  const easternHour = getEasternHour(now);
 
-  if (easternHour < 11) {
-    return formatEasternDate(subtractDays(now, 1));
-  }
-
-  return formatEasternDate(now);
+  return formatEasternDate(subtractDays(now, 1));
 }
 
 function isAuthorizedCronRequest(request: Request) {
@@ -67,7 +62,7 @@ export async function GET(request: Request) {
   const businessDate =
     requestedDate && isValidDateString(requestedDate)
       ? requestedDate
-      : getMostRecentClosedReportingDate();
+      : getPreviousReportingDate();
 
   const result = await importDailySalesFromReporting(businessDate);
 
