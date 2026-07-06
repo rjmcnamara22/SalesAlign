@@ -7,7 +7,7 @@ import { getComparableDate } from "@/lib/comparison/getComparableDate";
 
 type DailySalesRecord = {
   businessDate: Date;
-  grossSalesCents: number;
+  salesTotalCents: number;
 };
 
 type CalendarGridProps = {
@@ -66,16 +66,16 @@ export function CalendarGrid({
             return {
               yearLabel: comparableDate.getUTCFullYear(),
               date: comparableDate,
-              grossSalesCents: comparableRecord?.grossSalesCents ?? null,
+              salesTotalCents: comparableRecord?.salesTotalCents ?? null,
             };
-          }).filter((comparison) => comparison.grossSalesCents !== null);
+          }).filter((comparison) => comparison.salesTotalCents !== null);
 
           return (
             <CalendarDayCell
               key={dateKey}
               date={calendarDay.date}
               isCurrentMonth={calendarDay.isCurrentMonth}
-              grossSalesCents={salesRecord?.grossSalesCents ?? null}
+              salesTotalCents={salesRecord?.salesTotalCents ?? null}
               comparisons={comparisons}
             />
           );

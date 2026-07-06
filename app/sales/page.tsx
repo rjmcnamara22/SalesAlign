@@ -75,12 +75,12 @@ export default async function SalesPage() {
                   );
 
                   const differenceCents = comparableRecord
-                    ? record.grossSalesCents - comparableRecord.grossSalesCents
+                    ? record.salesTotalCents - comparableRecord.salesTotalCents
                     : null;
 
                   const percentageChange =
-                    comparableRecord && comparableRecord.grossSalesCents !== 0
-                      ? (differenceCents! / comparableRecord.grossSalesCents) *
+                    comparableRecord && comparableRecord.salesTotalCents !== 0
+                      ? (differenceCents! / comparableRecord.salesTotalCents) *
                         100
                       : null;
 
@@ -89,14 +89,14 @@ export default async function SalesPage() {
                       <td className="p-3">{formatDate(record.businessDate)}</td>
 
                       <td className="p-3">
-                        {formatCurrency(record.grossSalesCents)}
+                        {formatCurrency(record.salesTotalCents)}
                       </td>
 
                       <td className="p-3">{formatDate(comparableDate)}</td>
 
                       <td className="p-3">
                         {comparableRecord
-                          ? formatCurrency(comparableRecord.grossSalesCents)
+                          ? formatCurrency(comparableRecord.salesTotalCents)
                           : "No record"}
                       </td>
 

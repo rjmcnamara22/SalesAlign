@@ -3,13 +3,13 @@ import Link from "next/link";
 type CalendarCellComparison = {
   yearLabel: number;
   date: Date;
-  grossSalesCents: number | null;
+  salesTotalCents: number | null;
 };
 
 type CalendarDayCellProps = {
   date: Date;
   isCurrentMonth: boolean;
-  grossSalesCents: number | null;
+  salesTotalCents: number | null;
   comparisons: CalendarCellComparison[];
 };
 
@@ -32,7 +32,7 @@ function formatDate(date: Date) {
 export function CalendarDayCell({
   date,
   isCurrentMonth,
-  grossSalesCents,
+  salesTotalCents,
   comparisons,
 }: CalendarDayCellProps) {
   const dayNumber = date.getDate();
@@ -53,7 +53,7 @@ export function CalendarDayCell({
         <div>
           <p className="text-gray-500">Current</p>
           <p className="text-sm font-semibold text-gray-900">
-            {formatCurrency(grossSalesCents)}
+            {formatCurrency(salesTotalCents)}
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export function CalendarDayCell({
                 </span>
 
                 <span className="font-medium text-gray-900">
-                  {formatCurrency(comparison.grossSalesCents)}
+                  {formatCurrency(comparison.salesTotalCents)}
                 </span>
               </div>
             ))}

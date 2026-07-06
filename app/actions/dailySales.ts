@@ -41,7 +41,7 @@ export type CreateDailySalesState = {
 };
 
 export async function createDailySales(
-  previousState: CreateDailySalesState,
+  _previousState: CreateDailySalesState,
   formData: FormData,
 ): Promise<CreateDailySalesState> {
   await requireAdmin();
@@ -68,7 +68,7 @@ export async function createDailySales(
     await prisma.dailySales.create({
       data: {
         businessDate: new Date(`${businessDate}T00:00:00.000Z`),
-        grossSalesCents: Math.round(grossSales * 100),
+        salesTotalCents: Math.round(grossSales * 100),
         netSalesCents:
           netSales === "" || netSales === undefined
             ? null
@@ -117,7 +117,7 @@ export type DeleteDailySalesState = {
 };
 
 export async function deleteDailySales(
-  previousState: DeleteDailySalesState,
+  _previousState: DeleteDailySalesState,
   formData: FormData,
 ): Promise<DeleteDailySalesState> {
   await requireAdmin();
@@ -188,7 +188,7 @@ export type UpdateDailySalesState = {
 };
 
 export async function updateDailySales(
-  previousState: UpdateDailySalesState,
+  _previousState: UpdateDailySalesState,
   formData: FormData,
 ): Promise<UpdateDailySalesState> {
   await requireAdmin();
@@ -215,7 +215,7 @@ export async function updateDailySales(
         id,
       },
       data: {
-        grossSalesCents: Math.round(grossSales * 100),
+        salesTotalCents: Math.round(grossSales * 100),
         netSalesCents:
           netSales === "" || netSales === undefined
             ? null

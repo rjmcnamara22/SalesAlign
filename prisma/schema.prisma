@@ -15,7 +15,7 @@ datasource db {
 model DailySales {
   id               String      @id @default(cuid())
   businessDate     DateTime    @unique @db.Date
-  grossSalesCents  Int
+  salesTotalCents Int
   netSalesCents    Int?
   transactionCount Int?
   source           SalesSource @default(MANUAL)

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/database/prisma";
 
 type ImportDailySalesFromReportingResult = {
   businessDate: string;
-  grossSalesCents: number;
+  salesTotalCents: number;
   netSalesCents: number | null;
   transactionCount: number | null;
 };
@@ -115,7 +115,7 @@ export async function importDailySalesFromReporting(
   const taxesCents = toNullableCents(row?.["Sales.sales_tax_amount"]);
   const transactionCount = toNullableNumber(row?.["Sales.order_count"]);
 
-  const grossSalesCents = (netSalesCents ?? 0) + (taxesCents ?? 0);
+  const salesTotalCents = (netSalesCents ?? 0) + (taxesCents ?? 0);
 
   await prisma.dailySales.upsert({
     where: {
@@ -123,14 +123,14 @@ export async function importDailySalesFromReporting(
     },
     create: {
       businessDate: new Date(`${businessDate}T00:00:00.000Z`),
-      grossSalesCents,
+      salesTotalCents,
       netSalesCents,
       transactionCount,
       source: "SQUARE",
       notes: "Imported from Square Reporting API.",
     },
     update: {
-      grossSalesCents,
+      salesTotalCents,
       netSalesCents,
       transactionCount,
       source: "SQUARE",
@@ -140,7 +140,7 @@ export async function importDailySalesFromReporting(
 
   return {
     businessDate,
-    grossSalesCents,
+    salesTotalCents,
     netSalesCents,
     transactionCount,
   };

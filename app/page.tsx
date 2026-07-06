@@ -70,8 +70,8 @@ export default async function Home() {
   const currentRecord = salesByDate.get(formatDateKey(businessDate));
   const comparableRecord = salesByDate.get(formatDateKey(comparableDate));
 
-  const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
-  const comparableSalesCents = comparableRecord?.grossSalesCents ?? 0;
+  const currentSalesCents = currentRecord?.salesTotalCents ?? 0;
+  const comparableSalesCents = comparableRecord?.salesTotalCents ?? 0;
 
   const differenceCents = currentSalesCents - comparableSalesCents;
 

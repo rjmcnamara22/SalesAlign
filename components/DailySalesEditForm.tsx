@@ -10,7 +10,7 @@ import {
 type DailySalesEditFormProps = {
   record: {
     id: string;
-    grossSalesCents: number;
+    salesTotalCents: number;
     netSalesCents: number | null;
     transactionCount: number | null;
     notes: string | null;
@@ -52,7 +52,7 @@ export function DailySalesEditForm({ record }: DailySalesEditFormProps) {
           min="0"
           step="0.01"
           required
-          defaultValue={centsToDollars(record.grossSalesCents)}
+          defaultValue={centsToDollars(record.salesTotalCents)}
           className="w-full rounded border px-3 py-2"
         />
       </div>

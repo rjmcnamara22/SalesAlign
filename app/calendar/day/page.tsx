@@ -88,7 +88,7 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
     select: {
       id: true,
       businessDate: true,
-      grossSalesCents: true,
+      salesTotalCents: true,
       netSalesCents: true,
       transactionCount: true,
       notes: true,
@@ -110,8 +110,8 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
         return null;
       }
 
-      const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
-      const comparableSalesCents = comparableRecord.grossSalesCents;
+      const currentSalesCents = currentRecord?.salesTotalCents ?? 0;
+      const comparableSalesCents = comparableRecord.salesTotalCents;
       const differenceCents = currentSalesCents - comparableSalesCents;
       const percentageChange =
         comparableSalesCents > 0
@@ -129,9 +129,9 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
 
   const mostRecentComparison = comparisonRows[0] ?? null;
 
-  const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
+  const currentSalesCents = currentRecord?.salesTotalCents ?? 0;
   const mostRecentComparableSalesCents =
-    mostRecentComparison?.record.grossSalesCents ?? 0;
+    mostRecentComparison?.record.salesTotalCents ?? 0;
 
   const differenceCents = currentSalesCents - mostRecentComparableSalesCents;
 
@@ -245,7 +245,7 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
                       {dateFormatter.format(row.date)}
                     </td>
                     <td className="py-2 pr-4">
-                      {formatCurrency(row.record.grossSalesCents)}
+                      {formatCurrency(row.record.salesTotalCents)}
                     </td>
                     <td className="py-2 pr-4">
                       {formatCurrency(row.differenceCents)}
@@ -273,7 +273,7 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
             <div>
               <dt className="text-sm text-gray-600">Sales total</dt>
               <dd className="text-xl font-bold">
-                {formatCurrency(currentRecord.grossSalesCents)}
+                {formatCurrency(currentRecord.salesTotalCents)}
               </dd>
             </div>
 

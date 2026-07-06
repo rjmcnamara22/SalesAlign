@@ -93,7 +93,7 @@ export default async function CalendarPage({
     },
     select: {
       businessDate: true,
-      grossSalesCents: true,
+      salesTotalCents: true,
     },
     orderBy: {
       businessDate: "asc",
