@@ -1,9 +1,16 @@
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
-import { clearAdminSession } from "@/lib/auth/admin";
+const ADMIN_COOKIE_NAME = "salesalign-admin";
 
-export async function GET() {
-  await clearAdminSession();
+export async function POST() {
+  const response = NextResponse.json({ ok: true });
 
-  redirect("/");
+  response.cookies.set({
+    name: ADMIN_COOKIE_NAME,
+    value: "",
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
 }

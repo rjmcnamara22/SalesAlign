@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import { prisma } from "@/lib/database/prisma";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
+import { isAdminSession } from "@/lib/auth/admin";
+import { AdminLogoutButton } from "@/components/AdminLogoutButton";
+
+export const dynamic = "force-dynamic";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -52,6 +56,8 @@ function getPreviousReportingDate() {
 }
 
 export default async function Home() {
+  const isAdmin = await isAdminSession();
+
   const businessDate = getPreviousReportingDate();
   const comparableDate = getComparableDate(businessDate, 1);
 
@@ -85,11 +91,17 @@ export default async function Home() {
   return (
     <main className="mx-auto max-w-7xl p-8">
       <section className="rounded-lg border p-8">
-        <p className="text-sm text-gray-600">SalesAlign Dashboard</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-600">SalesAlign Dashboard</p>
 
-        <h1 className="mt-3 text-4xl font-bold">
-          Yesterday&apos;s Sales Overview
-        </h1>
+            <h1 className="mt-3 text-4xl font-bold">
+              Yesterday&apos;s Sales Overview
+            </h1>
+          </div>
+
+          {isAdmin ? <AdminLogoutButton /> : null}
+        </div>
 
         <p className="mt-4 max-w-3xl text-gray-700">
           Track the most recent closed reporting day and compare it against the
@@ -100,15 +112,6 @@ export default async function Home() {
           {dateFormatter.format(businessDate)} compared with{" "}
           {dateFormatter.format(comparableDate)}
         </p>
-
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/sales"
-            className="rounded bg-black px-4 py-2 font-medium text-white"
-          >
-            Enter sales
-          </Link>
-        </div>
       </section>
 
       <section className="mt-8 grid gap-4 md:grid-cols-4">
@@ -175,14 +178,15 @@ export default async function Home() {
         <Link href="/sales" className="rounded-lg border p-6">
           <h2 className="text-2xl font-bold">Sales Entry</h2>
           <p className="mt-3 text-gray-700">
-            Manually add and review daily sales records.
+            Admin-only tools for manually reviewing, adding, or correcting daily
+            sales records.
           </p>
         </Link>
 
         <Link href="/square-import" className="rounded-lg border p-6">
           <h2 className="text-2xl font-bold">Square Import</h2>
           <p className="mt-3 text-gray-700">
-            Import Square sales totals for individual days or date ranges.
+            Admin-only tools for importing Square sales totals by date range.
           </p>
         </Link>
       </section>
