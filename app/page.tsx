@@ -1,256 +1,194 @@
 import Link from "next/link";
 
-import { getMonthCalendarDays } from "@/lib/calendar/getMonthCalendarDays";
-import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { prisma } from "@/lib/database/prisma";
+import { getComparableDate } from "@/lib/comparison/getComparableDate";
 
-const YEARS_BACK = 1;
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatCurrency(cents: number) {
+  return currencyFormatter.format(cents / 100);
+}
 
 function formatDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function formatCurrency(cents: number | null) {
-  if (cents === null) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
+function parseDateOnly(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00.000Z`);
 }
 
-function formatPercentage(value: number | null) {
-  if (value === null) {
-    return "—";
-  }
+function getEasternDateKey(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+  return formatter.format(date);
 }
 
-function addDays(date: Date, days: number) {
+function subtractDays(date: Date, days: number) {
   const nextDate = new Date(date);
-  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  nextDate.setUTCDate(nextDate.getUTCDate() - days);
   return nextDate;
 }
 
-function getComparisonTextColor(value: number | null) {
-  if (value === null) {
-    return "text-gray-400";
-  }
+function getPreviousReportingDate() {
+  const now = new Date();
 
-  return value >= 0 ? "text-green-700" : "text-red-700";
+  return parseDateOnly(getEasternDateKey(subtractDays(now, 1)));
 }
 
-export default async function HomePage() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const monthIndex = today.getMonth();
+export default async function Home() {
+  const businessDate = getPreviousReportingDate();
+  const comparableDate = getComparableDate(businessDate, 1);
 
-  const calendarDays = getMonthCalendarDays(year, monthIndex);
-  const currentMonthDays = calendarDays.filter((day) => day.isCurrentMonth);
-
-  const monthStartDate = currentMonthDays[0].date;
-  const monthEndDate = currentMonthDays[currentMonthDays.length - 1].date;
-
-  const comparableStartDate = getComparableDate(monthStartDate, YEARS_BACK);
-  const queryEndDate = addDays(monthEndDate, 1);
-
-  const salesRecords = await prisma.dailySales.findMany({
+  const records = await prisma.dailySales.findMany({
     where: {
       businessDate: {
-        gte: comparableStartDate,
-        lt: queryEndDate,
+        in: [businessDate, comparableDate],
       },
-    },
-    select: {
-      businessDate: true,
-      grossSalesCents: true,
     },
   });
 
   const salesByDate = new Map(
-    salesRecords.map((record) => [formatDateKey(record.businessDate), record]),
+    records.map((record) => [formatDateKey(record.businessDate), record]),
   );
 
-  let currentMonthSalesCents = 0;
-  let comparableMonthSalesCents = 0;
-  let currentMonthRecordCount = 0;
-  let comparableRecordCount = 0;
+  const currentRecord = salesByDate.get(formatDateKey(businessDate));
+  const comparableRecord = salesByDate.get(formatDateKey(comparableDate));
 
-  for (const day of currentMonthDays) {
-    const currentRecord = salesByDate.get(formatDateKey(day.date));
-    const comparableDate = getComparableDate(day.date, YEARS_BACK);
-    const comparableRecord = salesByDate.get(formatDateKey(comparableDate));
+  const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
+  const comparableSalesCents = comparableRecord?.grossSalesCents ?? 0;
 
-    if (currentRecord) {
-      currentMonthSalesCents += currentRecord.grossSalesCents;
-      currentMonthRecordCount += 1;
-    }
-
-    if (comparableRecord) {
-      comparableMonthSalesCents += comparableRecord.grossSalesCents;
-      comparableRecordCount += 1;
-    }
-  }
-
-  const differenceCents =
-    currentMonthRecordCount > 0 && comparableRecordCount > 0
-      ? currentMonthSalesCents - comparableMonthSalesCents
-      : null;
+  const differenceCents = currentSalesCents - comparableSalesCents;
 
   const percentageChange =
-    differenceCents !== null && comparableMonthSalesCents !== 0
-      ? (differenceCents / comparableMonthSalesCents) * 100
+    comparableSalesCents > 0
+      ? (differenceCents / comparableSalesCents) * 100
       : null;
 
-  const monthName = MONTH_NAMES[monthIndex];
+  const isDifferenceNegative = differenceCents < 0;
 
   return (
     <main className="mx-auto max-w-7xl p-8">
-      <section className="rounded-xl border bg-white p-8">
-        <p className="text-sm font-medium text-gray-500">
-          SalesAlign Dashboard
-        </p>
+      <section className="rounded-lg border p-8">
+        <p className="text-sm text-gray-600">SalesAlign Dashboard</p>
 
-        <h1 className="mt-2 text-4xl font-bold">
-          {monthName} {year} Sales Overview
+        <h1 className="mt-3 text-4xl font-bold">
+          Yesterday&apos;s Sales Overview
         </h1>
 
-        <p className="mt-3 max-w-3xl text-gray-600">
-          Track daily sales and compare each business date against
-          weekday-aligned historical sales records.
+        <p className="mt-4 max-w-3xl text-gray-700">
+          Track the most recent closed reporting day and compare it against the
+          weekday-aligned historical sales record.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <p className="mt-3 text-sm text-gray-600">
+          {dateFormatter.format(businessDate)} compared with{" "}
+          {dateFormatter.format(comparableDate)}
+        </p>
+
+        <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href={`/calendar?year=${year}&month=${monthIndex + 1}`}
-            className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
+            href="/calendar"
+            className="rounded bg-black px-4 py-2 font-medium text-white"
           >
             View calendar
           </Link>
 
-          <Link
-            href="/sales"
-            className="rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
-          >
+          <Link href="/sales" className="rounded border px-4 py-2 font-medium">
             Enter sales
           </Link>
         </div>
       </section>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-8 grid gap-4 md:grid-cols-4">
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">
-            Current month sales
+          <p className="text-sm text-gray-600">Yesterday&apos;s sales total</p>
+          <p className="mt-3 text-3xl font-bold">
+            {formatCurrency(currentSalesCents)}
           </p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {formatCurrency(currentMonthSalesCents)}
-          </p>
-
-          <p className="mt-2 text-sm text-gray-500">
-            {currentMonthRecordCount} recorded day
-            {currentMonthRecordCount === 1 ? "" : "s"}
+          <p className="mt-3 text-sm text-gray-600">
+            {currentRecord ? "Imported from Square" : "No record imported yet"}
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Comparable sales</p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {formatCurrency(
-              comparableRecordCount > 0 ? comparableMonthSalesCents : null,
-            )}
+          <p className="text-sm text-gray-600">Comparable day sales</p>
+          <p className="mt-3 text-3xl font-bold">
+            {formatCurrency(comparableSalesCents)}
           </p>
-
-          <p className="mt-2 text-sm text-gray-500">
-            {comparableRecordCount} comparable day
-            {comparableRecordCount === 1 ? "" : "s"}
+          <p className="mt-3 text-sm text-gray-600">
+            Weekday-aligned prior year
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Dollar difference</p>
-
+          <p className="text-sm text-gray-600">Difference</p>
           <p
-            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
-              differenceCents,
-            )}`}
+            className={`mt-3 text-3xl font-bold ${
+              isDifferenceNegative ? "text-red-600" : "text-green-700"
+            }`}
           >
-            {differenceCents === null
-              ? "—"
-              : `${differenceCents >= 0 ? "+" : "-"}${formatCurrency(
-                  Math.abs(differenceCents),
-                )}`}
+            {formatCurrency(differenceCents)}
           </p>
-
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-3 text-sm text-gray-600">
             Versus weekday-aligned prior year
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Percentage change</p>
-
+          <p className="text-sm text-gray-600">Percentage change</p>
           <p
-            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
-              percentageChange,
-            )}`}
+            className={`mt-3 text-3xl font-bold ${
+              isDifferenceNegative ? "text-red-600" : "text-green-700"
+            }`}
           >
-            {formatPercentage(percentageChange)}
+            {percentageChange === null
+              ? "N/A"
+              : `${percentageChange.toFixed(1)}%`}
           </p>
-
-          <p className="mt-2 text-sm text-gray-500">
-            Based on recorded comparable days
+          <p className="mt-3 text-sm text-gray-600">
+            Based on comparable day sales
           </p>
         </div>
       </section>
 
       <section className="mt-8 grid gap-4 md:grid-cols-3">
-        <Link
-          href={`/calendar?year=${year}&month=${monthIndex + 1}`}
-          className="rounded-lg border p-6 transition hover:bg-gray-50"
-        >
-          <h2 className="text-xl font-semibold">Calendar</h2>
-          <p className="mt-2 text-sm text-gray-600">
+        <Link href="/calendar" className="rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Calendar</h2>
+          <p className="mt-3 text-gray-700">
             View daily sales in a monthly calendar with multi-year weekday
             comparisons.
           </p>
         </Link>
 
-        <Link
-          href="/sales"
-          className="rounded-lg border p-6 transition hover:bg-gray-50"
-        >
-          <h2 className="text-xl font-semibold">Sales Entry</h2>
-          <p className="mt-2 text-sm text-gray-600">
+        <Link href="/sales" className="rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Sales Entry</h2>
+          <p className="mt-3 text-gray-700">
             Manually add and review daily sales records.
           </p>
         </Link>
 
-        <div className="rounded-lg border p-6 text-gray-400">
-          <h2 className="text-xl font-semibold">Square Import</h2>
-          <p className="mt-2 text-sm">
-            Coming next: import daily sales totals directly from Square.
+        <Link href="/square-import" className="rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Square Import</h2>
+          <p className="mt-3 text-gray-700">
+            Import Square sales totals for individual days or date ranges.
           </p>
-        </div>
+        </Link>
       </section>
     </main>
   );
