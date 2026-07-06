@@ -6,7 +6,7 @@ Instead of comparing the same exact calendar date year over year, SalesAlign com
 
 ## Live Demo
 
-[View SalesAlign on Vercel](https://your-vercel-url.vercel.app)
+[View SalesAlign on Vercel](https://sales-align.vercel.app)
 
 ## Overview
 
