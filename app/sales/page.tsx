@@ -1,6 +1,7 @@
 import { DailySalesForm } from "@/components/DailySalesForm";
 import { prisma } from "@/lib/database/prisma";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
+import { redirectIfNotAdmin } from "@/lib/auth/admin";
 
 function formatCurrency(cents: number | null) {
   if (cents === null) {
@@ -26,6 +27,7 @@ function formatPercentage(value: number | null) {
 }
 
 export default async function SalesPage() {
+  await redirectIfNotAdmin();
   const salesRecords = await prisma.dailySales.findMany({
     orderBy: {
       businessDate: "desc",

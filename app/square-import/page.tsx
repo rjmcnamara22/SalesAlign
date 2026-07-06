@@ -1,7 +1,10 @@
 import { importDailySalesRangeFromReporting } from "@/lib/square/importDailySalesRangeFromReporting";
+import { redirectIfNotAdmin, requireAdmin } from "@/lib/auth/admin";
 
 async function importSquareSalesRange(formData: FormData) {
   "use server";
+
+  await requireAdmin();
 
   const startDate = String(formData.get("startDate") ?? "");
   const endDate = String(formData.get("endDate") ?? "");
@@ -9,7 +12,9 @@ async function importSquareSalesRange(formData: FormData) {
   await importDailySalesRangeFromReporting(startDate, endDate);
 }
 
-export default function SquareImportPage() {
+export default async function SquareImportPage() {
+  await redirectIfNotAdmin();
+
   return (
     <main className="mx-auto max-w-xl p-8">
       <h1 className="text-3xl font-bold">Square Import</h1>

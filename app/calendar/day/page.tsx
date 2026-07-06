@@ -1,98 +1,80 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { DailySalesCreateForDateForm } from "@/components/DailySalesCreateForDateForm";
 import { DailySalesDeleteForm } from "@/components/DailySalesDeleteForm";
 import { DailySalesEditForm } from "@/components/DailySalesEditForm";
-import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { prisma } from "@/lib/database/prisma";
+import { getComparableDate } from "@/lib/comparison/getComparableDate";
+import { isAdminSession } from "@/lib/auth/admin";
 
-const YEARS_BACK = 8;
-
-type CalendarDayPageProps = {
+type DayPageProps = {
   searchParams: Promise<{
     date?: string;
   }>;
 };
 
-type ComparableYearRow = {
-  yearLabel: number;
-  comparableDate: Date;
-  grossSalesCents: number | null;
-  differenceCents: number | null;
-  percentageChange: number | null;
-};
+const YEARS_BACK = 8;
 
-function isValidDateString(value: string | undefined) {
-  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatCurrency(cents: number) {
+  return currencyFormatter.format(cents / 100);
 }
 
-function parseBusinessDate(dateString: string) {
-  return new Date(`${dateString}T00:00:00.000Z`);
-}
-
-function formatDate(date: Date) {
+function formatDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function formatDisplayDate(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
+function parseBusinessDate(date: string) {
+  return new Date(`${date}T00:00:00.000Z`);
 }
 
-function formatCurrency(cents: number | null | undefined) {
-  if (cents === null || cents === undefined) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDifference(cents: number | null) {
-  if (cents === null) {
-    return "—";
-  }
-
-  const formattedValue = formatCurrency(Math.abs(cents));
-
-  return cents >= 0 ? `+${formattedValue}` : `-${formattedValue}`;
+function isValidDateString(value: string | undefined): value is string {
+  return value !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function formatPercentage(value: number | null) {
   if (value === null) {
-    return "—";
+    return "N/A";
   }
 
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+  return `${value.toFixed(1)}%`;
 }
 
-function getComparisonTextColor(value: number | null) {
-  if (value === null) {
-    return "text-gray-400";
-  }
-
-  return value >= 0 ? "text-green-700" : "text-red-700";
-}
-
-export default async function CalendarDayPage({
-  searchParams,
-}: CalendarDayPageProps) {
+export default async function CalendarDayPage({ searchParams }: DayPageProps) {
   const params = await searchParams;
+  const businessDateKey = params.date;
 
-  if (!isValidDateString(params.date)) {
-    notFound();
+  if (!isValidDateString(businessDateKey)) {
+    return (
+      <main className="mx-auto max-w-5xl p-8">
+        <h1 className="text-3xl font-bold">Invalid date</h1>
+
+        <p className="mt-4 text-gray-600">
+          Please select a valid calendar date.
+        </p>
+
+        <Link href="/calendar" className="mt-6 inline-block underline">
+          Back to calendar
+        </Link>
+      </main>
+    );
   }
 
-  const businessDate = parseBusinessDate(params.date!);
+  const isAdmin = await isAdminSession();
 
+  const businessDate = parseBusinessDate(businessDateKey);
   const comparableDates = Array.from({ length: YEARS_BACK }, (_, index) =>
     getComparableDate(businessDate, index + 1),
   );
@@ -110,178 +92,165 @@ export default async function CalendarDayPage({
       netSalesCents: true,
       transactionCount: true,
       notes: true,
+      source: true,
     },
   });
 
-  const recordsByDate = new Map(
-    records.map((record) => [formatDate(record.businessDate), record]),
+  const salesByDate = new Map(
+    records.map((record) => [formatDateKey(record.businessDate), record]),
   );
 
-  const currentRecord = recordsByDate.get(formatDate(businessDate));
+  const currentRecord = salesByDate.get(formatDateKey(businessDate));
 
-  const comparableRows: ComparableYearRow[] = comparableDates.map(
-    (comparableDate) => {
-      const comparableRecord = recordsByDate.get(formatDate(comparableDate));
+  const comparisonRows = comparableDates
+    .map((comparableDate) => {
+      const comparableRecord = salesByDate.get(formatDateKey(comparableDate));
 
-      const differenceCents =
-        currentRecord && comparableRecord
-          ? currentRecord.grossSalesCents - comparableRecord.grossSalesCents
-          : null;
+      if (!comparableRecord) {
+        return null;
+      }
 
+      const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
+      const comparableSalesCents = comparableRecord.grossSalesCents;
+      const differenceCents = currentSalesCents - comparableSalesCents;
       const percentageChange =
-        differenceCents !== null &&
-        comparableRecord &&
-        comparableRecord.grossSalesCents !== 0
-          ? (differenceCents / comparableRecord.grossSalesCents) * 100
+        comparableSalesCents > 0
+          ? (differenceCents / comparableSalesCents) * 100
           : null;
 
       return {
-        yearLabel: comparableDate.getUTCFullYear(),
-        comparableDate,
-        grossSalesCents: comparableRecord?.grossSalesCents ?? null,
+        date: comparableDate,
+        record: comparableRecord,
         differenceCents,
         percentageChange,
       };
-    },
-  );
+    })
+    .filter((row) => row !== null);
 
-  const rowsWithData = comparableRows.filter(
-    (row) => row.grossSalesCents !== null,
-  );
+  const mostRecentComparison = comparisonRows[0] ?? null;
 
-  const mostRecentComparableRow = rowsWithData[0] ?? null;
+  const currentSalesCents = currentRecord?.grossSalesCents ?? 0;
+  const mostRecentComparableSalesCents =
+    mostRecentComparison?.record.grossSalesCents ?? 0;
 
-  const calendarHref = `/calendar?year=${businessDate.getUTCFullYear()}&month=${
-    businessDate.getUTCMonth() + 1
-  }`;
+  const differenceCents = currentSalesCents - mostRecentComparableSalesCents;
+
+  const percentageChange =
+    mostRecentComparableSalesCents > 0
+      ? (differenceCents / mostRecentComparableSalesCents) * 100
+      : null;
+
+  const isDifferenceNegative = differenceCents < 0;
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <Link
-        href={calendarHref}
-        className="text-sm font-medium text-gray-600 hover:text-gray-900"
-      >
-        ← Back to calendar
-      </Link>
+    <main className="mx-auto max-w-6xl p-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-gray-600">SalesAlign</p>
 
-      <div className="mt-6">
-        <p className="text-sm font-medium text-gray-500">Day detail</p>
+          <h1 className="mt-2 text-4xl font-bold">
+            {dateFormatter.format(businessDate)}
+          </h1>
 
-        <h1 className="text-3xl font-bold">
-          {formatDisplayDate(businessDate)}
-        </h1>
+          <p className="mt-3 text-gray-600">
+            Daily sales detail with weekday-aligned historical comparisons.
+          </p>
+        </div>
 
-        <p className="mt-2 text-gray-600">
-          Multi-year weekday-aligned comparison for this business date.
-        </p>
+        <Link href="/calendar" className="rounded border px-4 py-2 font-medium">
+          Back to calendar
+        </Link>
       </div>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-2">
+      {!isAdmin ? (
+        <p className="mt-6 rounded-lg border p-4 text-sm text-gray-600">
+          Read-only view. Admin access is required to edit, delete, or import
+          sales records.
+        </p>
+      ) : null}
+
+      <section className="mt-8 grid gap-4 md:grid-cols-4">
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">Current sales</p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {formatCurrency(currentRecord?.grossSalesCents)}
+          <p className="text-sm text-gray-600">Sales total</p>
+          <p className="mt-3 text-3xl font-bold">
+            {formatCurrency(currentSalesCents)}
           </p>
-
-          <p className="mt-2 text-sm text-gray-500">
-            {formatDate(businessDate)}
+          <p className="mt-3 text-sm text-gray-600">
+            {currentRecord ? "Recorded sales total" : "No record for this day"}
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">
-            Most recent comparable sales
+          <p className="text-sm text-gray-600">Comparable day sales</p>
+          <p className="mt-3 text-3xl font-bold">
+            {formatCurrency(mostRecentComparableSalesCents)}
           </p>
-
-          <p className="mt-2 text-3xl font-bold">
-            {formatCurrency(mostRecentComparableRow?.grossSalesCents)}
-          </p>
-
-          <p className="mt-2 text-sm text-gray-500">
-            {mostRecentComparableRow
-              ? formatDate(mostRecentComparableRow.comparableDate)
-              : "No comparable record found"}
+          <p className="mt-3 text-sm text-gray-600">
+            {mostRecentComparison
+              ? dateFormatter.format(mostRecentComparison.date)
+              : "No comparable record"}
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">
-            Difference vs most recent comparable
-          </p>
-
+          <p className="text-sm text-gray-600">Difference</p>
           <p
-            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
-              mostRecentComparableRow?.differenceCents ?? null,
-            )}`}
+            className={`mt-3 text-3xl font-bold ${
+              isDifferenceNegative ? "text-red-600" : "text-green-700"
+            }`}
           >
-            {formatDifference(mostRecentComparableRow?.differenceCents ?? null)}
+            {formatCurrency(differenceCents)}
+          </p>
+          <p className="mt-3 text-sm text-gray-600">
+            Versus most recent comparable day
           </p>
         </div>
 
         <div className="rounded-lg border p-6">
-          <p className="text-sm font-medium text-gray-500">
-            Percentage change vs most recent comparable
-          </p>
-
+          <p className="text-sm text-gray-600">Percentage change</p>
           <p
-            className={`mt-2 text-3xl font-bold ${getComparisonTextColor(
-              mostRecentComparableRow?.percentageChange ?? null,
-            )}`}
+            className={`mt-3 text-3xl font-bold ${
+              isDifferenceNegative ? "text-red-600" : "text-green-700"
+            }`}
           >
-            {formatPercentage(
-              mostRecentComparableRow?.percentageChange ?? null,
-            )}
+            {formatPercentage(percentageChange)}
+          </p>
+          <p className="mt-3 text-sm text-gray-600">
+            Based on comparable day sales
           </p>
         </div>
       </section>
 
       <section className="mt-8 rounded-lg border p-6">
-        <h2 className="text-xl font-semibold">Comparable years</h2>
+        <h2 className="text-2xl font-bold">Comparable years</h2>
 
-        {rowsWithData.length === 0 ? (
-          <p className="mt-4 text-gray-600">
-            No prior comparable sales records exist for this date.
-          </p>
-        ) : (
+        {comparisonRows.length > 0 ? (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b">
-                  <th className="p-3">Year</th>
-                  <th className="p-3">Comparable date</th>
-                  <th className="p-3">Sales</th>
-                  <th className="p-3">Difference</th>
-                  <th className="p-3">Change</th>
+                  <th className="py-2 pr-4">Year</th>
+                  <th className="py-2 pr-4">Comparable date</th>
+                  <th className="py-2 pr-4">Sales total</th>
+                  <th className="py-2 pr-4">Difference</th>
+                  <th className="py-2 pr-4">Change</th>
                 </tr>
               </thead>
 
               <tbody>
-                {rowsWithData.map((row) => (
-                  <tr key={formatDate(row.comparableDate)} className="border-b">
-                    <td className="p-3">{row.yearLabel}</td>
-
-                    <td className="p-3">
-                      {formatDisplayDate(row.comparableDate)}
+                {comparisonRows.map((row) => (
+                  <tr key={formatDateKey(row.date)} className="border-b">
+                    <td className="py-2 pr-4">{row.date.getUTCFullYear()}</td>
+                    <td className="py-2 pr-4">
+                      {dateFormatter.format(row.date)}
                     </td>
-
-                    <td className="p-3">
-                      {formatCurrency(row.grossSalesCents)}
+                    <td className="py-2 pr-4">
+                      {formatCurrency(row.record.grossSalesCents)}
                     </td>
-
-                    <td
-                      className={`p-3 font-medium ${getComparisonTextColor(
-                        row.differenceCents,
-                      )}`}
-                    >
-                      {formatDifference(row.differenceCents)}
+                    <td className="py-2 pr-4">
+                      {formatCurrency(row.differenceCents)}
                     </td>
-
-                    <td
-                      className={`p-3 font-medium ${getComparisonTextColor(
-                        row.percentageChange,
-                      )}`}
-                    >
+                    <td className="py-2 pr-4">
                       {formatPercentage(row.percentageChange)}
                     </td>
                   </tr>
@@ -289,79 +258,83 @@ export default async function CalendarDayPage({
               </tbody>
             </table>
           </div>
+        ) : (
+          <p className="mt-4 text-gray-600">
+            No weekday-aligned comparison records found.
+          </p>
         )}
       </section>
 
       <section className="mt-8 rounded-lg border p-6">
-        <h2 className="text-xl font-semibold">Current day details</h2>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Net sales</p>
-            <p className="mt-1 text-lg font-semibold">
-              {formatCurrency(currentRecord?.netSalesCents)}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm font-medium text-gray-500">Transactions</p>
-            <p className="mt-1 text-lg font-semibold">
-              {currentRecord?.transactionCount ?? "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm font-medium text-gray-500">Gross sales</p>
-            <p className="mt-1 text-lg font-semibold">
-              {formatCurrency(currentRecord?.grossSalesCents)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-8 rounded-lg border p-6">
-        <h2 className="text-xl font-semibold">
-          {currentRecord ? "Edit sales record" : "Add sales record"}
-        </h2>
+        <h2 className="text-2xl font-bold">Current day details</h2>
 
         {currentRecord ? (
-          <DailySalesEditForm record={currentRecord} />
-        ) : (
-          <>
-            <p className="mt-3 text-gray-600">
-              No sales record exists for this day yet. Add one below.
-            </p>
+          <dl className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <dt className="text-sm text-gray-600">Sales total</dt>
+              <dd className="text-xl font-bold">
+                {formatCurrency(currentRecord.grossSalesCents)}
+              </dd>
+            </div>
 
-            <DailySalesCreateForDateForm
-              businessDate={formatDate(businessDate)}
-            />
-          </>
+            <div>
+              <dt className="text-sm text-gray-600">Net sales</dt>
+              <dd className="text-xl font-bold">
+                {currentRecord.netSalesCents === null
+                  ? "N/A"
+                  : formatCurrency(currentRecord.netSalesCents)}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-sm text-gray-600">Transactions</dt>
+              <dd className="text-xl font-bold">
+                {currentRecord.transactionCount ?? "N/A"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-sm text-gray-600">Source</dt>
+              <dd className="text-xl font-bold">{currentRecord.source}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-4 text-gray-600">
+            No sales record has been created for this date.
+          </p>
         )}
+
+        {currentRecord?.notes ? (
+          <div className="mt-6">
+            <h3 className="font-bold">Notes</h3>
+            <p className="mt-2 text-gray-700">{currentRecord.notes}</p>
+          </div>
+        ) : null}
       </section>
 
-      {currentRecord && (
+      {isAdmin && currentRecord ? (
+        <section className="mt-8 rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Edit sales record</h2>
+          <DailySalesEditForm record={currentRecord} />
+        </section>
+      ) : null}
+
+      {isAdmin && !currentRecord ? (
+        <section className="mt-8 rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Add sales record</h2>
+          <DailySalesCreateForDateForm businessDate={businessDateKey} />
+        </section>
+      ) : null}
+
+      {isAdmin && currentRecord ? (
         <section className="mt-8 rounded-lg border border-red-200 p-6">
-          <h2 className="text-xl font-semibold text-red-800">
-            Delete sales record
-          </h2>
-
-          <p className="mt-2 text-sm text-gray-600">
-            Remove this daily sales record if it was entered incorrectly or
-            should no longer be included in reporting. This action cannot be
-            undone.
+          <h2 className="text-2xl font-bold">Delete sales record</h2>
+          <p className="mt-2 text-gray-600">
+            Delete this sales record only if it was entered incorrectly.
           </p>
-
           <DailySalesDeleteForm recordId={currentRecord.id} />
         </section>
-      )}
-
-      <section className="mt-8 rounded-lg border p-6">
-        <h2 className="text-xl font-semibold">Notes</h2>
-
-        <p className="mt-3 text-gray-700">
-          {currentRecord?.notes || "No notes for this day."}
-        </p>
-      </section>
+      ) : null}
     </main>
   );
 }

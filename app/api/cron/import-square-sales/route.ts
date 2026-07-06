@@ -14,16 +14,6 @@ function formatEasternDate(date: Date) {
   return formatter.format(date);
 }
 
-function getEasternHour(date: Date) {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "numeric",
-    hour12: false,
-  });
-
-  return Number(formatter.format(date));
-}
-
 function subtractDays(date: Date, days: number) {
   const nextDate = new Date(date);
   nextDate.setUTCDate(nextDate.getUTCDate() - days);

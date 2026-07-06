@@ -6,6 +6,8 @@ import { z } from "zod";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/database/prisma";
 
+import { requireAdmin } from "@/lib/auth/admin";
+
 const dailySalesSchema = z.object({
   businessDate: z
     .string()
@@ -42,6 +44,8 @@ export async function createDailySales(
   previousState: CreateDailySalesState,
   formData: FormData,
 ): Promise<CreateDailySalesState> {
+  await requireAdmin();
+
   const result = dailySalesSchema.safeParse({
     businessDate: formData.get("businessDate"),
     grossSales: formData.get("grossSales"),
@@ -116,6 +120,7 @@ export async function deleteDailySales(
   previousState: DeleteDailySalesState,
   formData: FormData,
 ): Promise<DeleteDailySalesState> {
+  await requireAdmin();
   const result = deleteDailySalesSchema.safeParse({
     id: formData.get("id"),
   });
@@ -186,6 +191,7 @@ export async function updateDailySales(
   previousState: UpdateDailySalesState,
   formData: FormData,
 ): Promise<UpdateDailySalesState> {
+  await requireAdmin();
   const result = updateDailySalesSchema.safeParse({
     id: formData.get("id"),
     grossSales: formData.get("grossSales"),
