@@ -42,13 +42,22 @@ export default async function SalesPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-8">
-      <Link
-        href="/"
-        className="mb-6 inline-block rounded border px-4 py-2 font-medium"
-      >
-        Back to dashboard
-      </Link>
-      <h1 className="text-3xl font-bold">Daily Sales</h1>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Daily Sales</h1>
+
+          <p className="mt-2 text-gray-600">
+            Add, review, and correct daily sales records.
+          </p>
+        </div>
+
+        <Link
+          href="/"
+          className="whitespace-nowrap rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
+        >
+          Back to dashboard
+        </Link>
+      </div>
 
       <DailySalesForm />
 
@@ -65,7 +74,7 @@ export default async function SalesPage() {
               <thead>
                 <tr className="border-b">
                   <th className="p-3">Date</th>
-                  <th className="p-3">Gross sales</th>
+                  <th className="p-3">Sales Total</th>
                   <th className="p-3">Comparable date</th>
                   <th className="p-3">Comparable sales</th>
                   <th className="p-3">Difference</th>

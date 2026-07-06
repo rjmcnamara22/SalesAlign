@@ -102,12 +102,6 @@ export default async function CalendarPage({
 
   return (
     <main className="mx-auto max-w-7xl p-8">
-      <Link
-        href="/"
-        className="mb-6 inline-block rounded border px-4 py-2 font-medium"
-      >
-        Back to dashboard
-      </Link>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500">Sales calendar</p>
@@ -117,25 +111,34 @@ export default async function CalendarPage({
           </h1>
 
           <p className="mt-2 text-gray-600">
-            Daily gross sales compared with the weekday-aligned date from the
-            prior year.
+            Daily sales totals compared with weekday-aligned dates from previous
+            years.
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col items-start gap-2 sm:items-end">
           <Link
-            href={`/calendar?year=${previousMonth.year}&month=${previousMonth.month}`}
-            className="rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            href="/"
+            className="whitespace-nowrap rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
           >
-            Previous
+            Back to dashboard
           </Link>
 
-          <Link
-            href={`/calendar?year=${nextMonth.year}&month=${nextMonth.month}`}
-            className="rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
-          >
-            Next
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/calendar?year=${previousMonth.year}&month=${previousMonth.month}`}
+              className="rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            >
+              Previous
+            </Link>
+
+            <Link
+              href={`/calendar?year=${nextMonth.year}&month=${nextMonth.month}`}
+              className="rounded border px-4 py-2 text-sm font-medium hover:bg-gray-100"
+            >
+              Next
+            </Link>
+          </div>
         </div>
       </div>
 

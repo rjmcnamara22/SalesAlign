@@ -9,33 +9,54 @@ import {
 type AdminLoginPageProps = {
   searchParams: Promise<{
     error?: string;
+    redirectTo?: string;
   }>;
 };
+
+function getSafeRedirectPath(redirectTo: string | undefined) {
+  if (!redirectTo) {
+    return "/sales";
+  }
+
+  // Only allow internal absolute paths.
+  // This prevents redirecting to an external site after login.
+  if (!redirectTo.startsWith("/") || redirectTo.startsWith("//")) {
+    return "/sales";
+  }
+
+  return redirectTo;
+}
 
 async function loginAdmin(formData: FormData) {
   "use server";
 
   const password = String(formData.get("password") ?? "");
+  const redirectTo = String(formData.get("redirectTo") ?? "");
+  const safeRedirectPath = getSafeRedirectPath(redirectTo);
 
   if (!isValidAdminPassword(password)) {
-    redirect("/admin/login?error=1");
+    redirect(
+      `/admin/login?error=1&redirectTo=${encodeURIComponent(safeRedirectPath)}`,
+    );
   }
 
   await createAdminSession();
 
-  redirect("/sales");
+  redirect(safeRedirectPath);
 }
 
 export default async function AdminLoginPage({
   searchParams,
 }: AdminLoginPageProps) {
+  const params = await searchParams;
+  const safeRedirectPath = getSafeRedirectPath(params.redirectTo);
+
   const isAdmin = await isAdminSession();
 
   if (isAdmin) {
-    redirect("/sales");
+    redirect(safeRedirectPath);
   }
 
-  const params = await searchParams;
   const hasError = params.error === "1";
 
   return (
@@ -50,6 +71,8 @@ export default async function AdminLoginPage({
         action={loginAdmin}
         className="mt-8 grid gap-4 rounded-lg border p-6"
       >
+        <input type="hidden" name="redirectTo" value={safeRedirectPath} />
+
         <div>
           <label htmlFor="password" className="mb-1 block font-medium">
             Admin password

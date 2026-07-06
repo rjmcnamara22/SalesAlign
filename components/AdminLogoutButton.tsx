@@ -15,7 +15,7 @@ export function AdminLogoutButton() {
       onClick={handleLogout}
       className="rounded border px-4 py-2 font-medium"
     >
-      Log out
+      Logout
     </button>
   );
 }

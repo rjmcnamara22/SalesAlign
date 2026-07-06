@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { prisma } from "@/lib/database/prisma";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
+
 import { isAdminSession } from "@/lib/auth/admin";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 
@@ -90,6 +91,62 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-7xl p-8">
+      {!isAdmin ? (
+        <section className="mb-8 rounded-lg border p-8">
+          <p className="text-sm text-gray-600">Project Overview</p>
+
+          <h1 className="mt-3 text-4xl font-bold">SalesAlign</h1>
+
+          <p className="mt-4 max-w-4xl text-gray-700">
+            SalesAlign is a full-stack sales comparison dashboard built for a
+            small business that tracks daily performance against weekday-aligned
+            historical sales. Instead of comparing the same exact calendar date
+            year over year, the app compares each reporting day against the
+            equivalent weekday from previous years, which better reflects
+            restaurant and bar sales patterns.
+          </p>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="rounded border p-4">
+              <h2 className="font-bold">Business Problem</h2>
+              <p className="mt-2 text-sm text-gray-700">
+                Sales vary heavily by weekday, so comparing a Friday to a Monday
+                can give owners a misleading view of performance. This app
+                digitizes a manual calendar-based comparison workflow.
+              </p>
+            </div>
+
+            <div className="rounded border p-4">
+              <h2 className="font-bold">Technical Solution</h2>
+              <p className="mt-2 text-sm text-gray-700">
+                The app imports Square sales totals, stores historical records
+                in a database, calculates weekday-aligned comparison dates, and
+                exposes a read-only dashboard while protecting all admin-only
+                actions.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {[
+              "Next.js",
+              "TypeScript",
+              "Prisma",
+              "PostgreSQL",
+              "Square Reporting API",
+              "Vercel Cron",
+              "Admin Controls",
+            ].map((technology) => (
+              <span
+                key={technology}
+                className="rounded-full border px-3 py-1 text-sm text-gray-700"
+              >
+                {technology}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <section className="rounded-lg border p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -100,7 +157,16 @@ export default async function Home() {
             </h1>
           </div>
 
-          {isAdmin ? <AdminLogoutButton /> : null}
+          {isAdmin ? (
+            <AdminLogoutButton />
+          ) : (
+            <Link
+              href="/admin/login?redirectTo=/"
+              className="rounded border px-4 py-2 font-medium"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
         <p className="mt-4 max-w-3xl text-gray-700">
