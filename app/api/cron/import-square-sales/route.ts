@@ -1,8 +1,9 @@
 import { importDailySalesFromReporting } from "@/lib/square/importDailySalesFromReporting";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function getEasternBusinessDateToImport() {
+function formatEasternDate(date: Date) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -10,25 +11,64 @@ function getEasternBusinessDateToImport() {
     day: "2-digit",
   });
 
-  return formatter.format(new Date());
+  return formatter.format(date);
+}
+
+function getEasternHour(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    hour12: false,
+  });
+
+  return Number(formatter.format(date));
+}
+
+function subtractDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() - days);
+  return nextDate;
+}
+
+function getMostRecentClosedReportingDate() {
+  const now = new Date();
+  const easternHour = getEasternHour(now);
+
+  if (easternHour < 11) {
+    return formatEasternDate(subtractDays(now, 1));
+  }
+
+  return formatEasternDate(now);
+}
+
+function isAuthorizedCronRequest(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    return false;
+  }
+
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
+function isValidDateString(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expectedSecret = process.env.CRON_SECRET;
-
-  if (!expectedSecret) {
-    return Response.json(
-      { error: "CRON_SECRET is not configured" },
-      { status: 500 },
-    );
-  }
-
-  if (authHeader !== `Bearer ${expectedSecret}`) {
+  if (!isAuthorizedCronRequest(request)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const businessDate = getEasternBusinessDateToImport();
+  const url = new URL(request.url);
+  const requestedDate = url.searchParams.get("date");
+
+  const businessDate =
+    requestedDate && isValidDateString(requestedDate)
+      ? requestedDate
+      : getMostRecentClosedReportingDate();
+
   const result = await importDailySalesFromReporting(businessDate);
 
   return Response.json({
