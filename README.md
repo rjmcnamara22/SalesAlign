@@ -1,36 +1,182 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SalesAlign
+
+SalesAlign is a full-stack sales comparison dashboard built for a small business that tracks daily sales performance against weekday-aligned historical records.
+
+Instead of comparing the same exact calendar date year over year, SalesAlign compares each reporting day against the equivalent weekday from previous years. This gives a more accurate view of performance for businesses where sales vary heavily by day of the week, such as restaurants, bars, and other hospitality businesses.
+
+## Live Demo
+
+[View SalesAlign on Vercel](https://your-vercel-url.vercel.app)
+
+## Overview
+
+Many small businesses compare daily sales against prior years using printed calendars or spreadsheets. For hospitality businesses, exact-date comparisons can be misleading because Fridays, Saturdays, holidays, and event days often produce very different sales patterns than weekdays.
+
+SalesAlign digitizes this workflow by importing Square sales data, storing daily totals in a PostgreSQL database, and displaying weekday-aligned comparisons through a dashboard and monthly calendar.
+
+## Features
+
+- Imports daily sales totals from the Square Reporting API
+- Stores sales records in a PostgreSQL database using Prisma
+- Compares sales against weekday-aligned historical dates using 52-week intervals
+- Displays yesterday's sales overview with prior-year comparison
+- Provides a monthly calendar view with historical comparison data
+- Supports manual sales entry and correction through protected admin pages
+- Includes protected Square import tools for single-day or range-based imports
+- Uses a public read-only dashboard for recruiters or non-admin viewers
+- Includes admin authentication for import, edit, and delete actions
+- Runs scheduled imports through Vercel Cron
+
+## Tech Stack
+
+- **Frontend:** Next.js, React, TypeScript, Tailwind CSS
+- **Backend:** Next.js API routes and server actions
+- **Database:** PostgreSQL with Prisma ORM
+- **Hosting:** Vercel
+- **Database Hosting:** Neon
+- **External API:** Square Reporting API
+- **Authentication:** Custom admin session authentication
+- **Automation:** Vercel Cron Jobs
+
+## Core Business Logic
+
+SalesAlign uses weekday-aligned comparisons instead of exact-date comparisons.
+
+For example, instead of comparing:
+
+```text
+Tuesday, June 30, 2026
+to
+Monday, June 30, 2025
+```
+
+SalesAlign compares:
+
+```text
+Tuesday, June 30, 2026
+to
+Tuesday, July 1, 2025
+```
+
+This is done by subtracting 364 days, or 52 weeks, from the current reporting date.
+
+```ts
+const DAYS_IN_52_WEEKS = 364;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export function getComparableDate(currentDate: Date, yearsBack = 1): Date {
+  return new Date(
+    currentDate.getTime() -
+      DAYS_IN_52_WEEKS * yearsBack * MILLISECONDS_PER_DAY,
+  );
+}
+```
+
+## Sales Data Calculation
+
+The main sales total is calculated from Square reporting data as:
+
+```text
+Sales total = Net sales + Sales tax
+```
+
+This better matches the business owner's preferred reporting workflow.
+
+## Main Pages
+
+### Dashboard
+
+The dashboard shows the previous reporting day's sales total, comparable historical sales total, dollar difference, and percentage change.
+
+### Sales Calendar
+
+The calendar page shows daily sales totals in a month view and compares each day to weekday-aligned historical dates.
+
+### Daily Sales
+
+Admin-only page for manually adding, reviewing, and correcting daily sales records.
+
+### Square Import
+
+Admin-only page for importing Square sales records by selected date range.
+
+## Environment Variables
+
+The project requires the following environment variables:
+
+```env
+DATABASE_URL=
+SQUARE_ACCESS_TOKEN=
+SQUARE_LOCATION_ID=
+SQUARE_ENVIRONMENT=
+BUSINESS_TIMEZONE=
+CRON_SECRET=
+ADMIN_PASSWORD=
+ADMIN_AUTH_SECRET=
+```
+
+Do not commit `.env` or `.env.local` files.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Generate the Prisma client:
+
+```bash
+npx prisma generate
+```
+
+Run database migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the app at:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Useful Commands
 
-## Learn More
+Run linting:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Build the project:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+```
 
-## Deploy on Vercel
+Open Prisma Studio:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npx prisma studio
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Status
+
+SalesAlign is deployed and functional with real Square sales data integration, protected admin tools, scheduled imports, and a public read-only dashboard.
+
+Future improvements may include:
+
+- Last import status display
+- Missing-data indicators on the calendar
+- Month-to-date comparison summaries
+- More detailed trend analytics
+- Mobile manager dashboard integration
