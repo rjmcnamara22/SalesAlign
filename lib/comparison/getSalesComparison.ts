@@ -2,7 +2,7 @@ import { getComparableDate } from "./getComparableDate";
 
 type SalesRecord = {
   businessDate: Date;
-  grossSalesCents: number;
+  salesTotalCents: number;
 };
 
 export type SalesComparison = {
@@ -24,7 +24,7 @@ export function getSalesComparison(
     return {
       currentDate: currentRecord.businessDate,
       comparableDate,
-      currentSalesCents: currentRecord.grossSalesCents,
+      currentSalesCents: currentRecord.salesTotalCents,
       comparableSalesCents: null,
       dollarDifferenceCents: null,
       percentageDifference: null,
@@ -32,18 +32,18 @@ export function getSalesComparison(
   }
 
   const dollarDifferenceCents =
-    currentRecord.grossSalesCents - comparableRecord.grossSalesCents;
+    currentRecord.salesTotalCents - comparableRecord.salesTotalCents;
 
   const percentageDifference =
-    comparableRecord.grossSalesCents === 0
+    comparableRecord.salesTotalCents === 0
       ? null
-      : (dollarDifferenceCents / comparableRecord.grossSalesCents) * 100;
+      : (dollarDifferenceCents / comparableRecord.salesTotalCents) * 100;
 
   return {
     currentDate: currentRecord.businessDate,
     comparableDate,
-    currentSalesCents: currentRecord.grossSalesCents,
-    comparableSalesCents: comparableRecord.grossSalesCents,
+    currentSalesCents: currentRecord.salesTotalCents,
+    comparableSalesCents: comparableRecord.salesTotalCents,
     dollarDifferenceCents,
     percentageDifference,
   };

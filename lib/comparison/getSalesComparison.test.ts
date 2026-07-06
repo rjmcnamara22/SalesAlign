@@ -7,11 +7,11 @@ describe("getSalesComparison", () => {
     const result = getSalesComparison(
       {
         businessDate: new Date(2026, 5, 30),
-        grossSalesCents: 120000,
+        salesTotalCents: 120000,
       },
       {
         businessDate: new Date(2025, 6, 1),
-        grossSalesCents: 100000,
+        salesTotalCents: 100000,
       },
     );
 
@@ -23,7 +23,7 @@ describe("getSalesComparison", () => {
     const result = getSalesComparison(
       {
         businessDate: new Date(2026, 5, 30),
-        grossSalesCents: 120000,
+        salesTotalCents: 120000,
       },
       null,
     );
@@ -37,11 +37,11 @@ describe("getSalesComparison", () => {
     const result = getSalesComparison(
       {
         businessDate: new Date(2026, 5, 30),
-        grossSalesCents: 120000,
+        salesTotalCents: 120000,
       },
       {
         businessDate: new Date(2025, 6, 1),
-        grossSalesCents: 0,
+        salesTotalCents: 0,
       },
     );
 
