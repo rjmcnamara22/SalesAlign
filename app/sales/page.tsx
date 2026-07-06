@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { DailySalesForm } from "@/components/DailySalesForm";
 import { prisma } from "@/lib/database/prisma";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
@@ -40,6 +42,12 @@ export default async function SalesPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-8">
+      <Link
+        href="/"
+        className="mb-6 inline-block rounded border px-4 py-2 font-medium"
+      >
+        Back to dashboard
+      </Link>
       <h1 className="text-3xl font-bold">Daily Sales</h1>
 
       <DailySalesForm />

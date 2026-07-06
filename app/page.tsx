@@ -103,13 +103,9 @@ export default async function Home() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/calendar"
+            href="/sales"
             className="rounded bg-black px-4 py-2 font-medium text-white"
           >
-            View calendar
-          </Link>
-
-          <Link href="/sales" className="rounded border px-4 py-2 font-medium">
             Enter sales
           </Link>
         </div>

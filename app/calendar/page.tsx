@@ -102,6 +102,12 @@ export default async function CalendarPage({
 
   return (
     <main className="mx-auto max-w-7xl p-8">
+      <Link
+        href="/"
+        className="mb-6 inline-block rounded border px-4 py-2 font-medium"
+      >
+        Back to dashboard
+      </Link>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500">Sales calendar</p>

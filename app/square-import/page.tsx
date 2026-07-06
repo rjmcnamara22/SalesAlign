@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { importDailySalesRangeFromReporting } from "@/lib/square/importDailySalesRangeFromReporting";
 import { redirectIfNotAdmin, requireAdmin } from "@/lib/auth/admin";
 
@@ -17,6 +19,12 @@ export default async function SquareImportPage() {
 
   return (
     <main className="mx-auto max-w-xl p-8">
+      <Link
+        href="/"
+        className="mb-6 inline-block rounded border px-4 py-2 font-medium"
+      >
+        Back to dashboard
+      </Link>
       <h1 className="text-3xl font-bold">Square Import</h1>
 
       <p className="mt-2 text-gray-600">
