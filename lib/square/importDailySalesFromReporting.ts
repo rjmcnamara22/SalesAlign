@@ -88,7 +88,7 @@ export async function importDailySalesFromReporting(
           {
             member: "Sales.reporting_day",
             operator: "equals",
-            values: [`${businessDate}T00:00:00.000`],
+            values: [businessDate],
           },
           {
             member: "Sales.location_id",
