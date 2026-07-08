@@ -18,8 +18,6 @@ function getSafeRedirectPath(redirectTo: string | undefined) {
     return "/sales";
   }
 
-  // Only allow internal absolute paths.
-  // This prevents redirecting to an external site after login.
   if (!redirectTo.startsWith("/") || redirectTo.startsWith("//")) {
     return "/sales";
   }
