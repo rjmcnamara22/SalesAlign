@@ -114,6 +114,11 @@ export default async function CalendarPage({
             Daily sales totals compared with weekday-aligned dates from previous
             years.
           </p>
+          <p className="mt-1 text-sm text-gray-600">
+            <span className="font-medium text-green-600">Green</span> current
+            sales totals indicate days that beat every available previous-year
+            comparison.
+          </p>
         </div>
 
         <div className="flex flex-col items-start gap-2 sm:items-end">
