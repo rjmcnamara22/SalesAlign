@@ -270,40 +270,40 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
         <section className="mt-8 rounded-lg border p-6">
           <h2 className="text-2xl font-bold">Comparison notes</h2>
 
-          <div className="mt-4 grid gap-4">
+          <div className="mt-4 grid gap-3">
             {comparisonRows.map((row) => (
-              <div key={row.record.id} className="rounded border p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold">
-                      {row.date.getUTCFullYear()} comparison
-                    </h3>
+              <details key={row.record.id} className="rounded border">
+                <summary className="cursor-pointer list-none p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold">{row.date.getUTCFullYear()}</h3>
 
-                    <p className="mt-1 text-sm text-gray-600">
-                      {dateFormatter.format(row.date)} ·{" "}
-                      {formatCurrency(row.record.salesTotalCents)}
-                    </p>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {dateFormatter.format(row.date)} ·{" "}
+                        {formatCurrency(row.record.salesTotalCents)}
+                      </p>
+                    </div>
+
+                    <span className="text-sm font-medium text-gray-500">
+                      View notes
+                    </span>
                   </div>
-                </div>
+                </summary>
 
-                {isAdmin ? (
-                  <div className="mt-4">
+                <div className="border-t p-4">
+                  {isAdmin ? (
                     <DailySalesNotesForm
                       recordId={row.record.id}
                       notes={row.record.notes}
                       returnTo={`/calendar/day?date=${businessDateKey}`}
                     />
-                  </div>
-                ) : row.record.notes ? (
-                  <p className="mt-4 text-sm text-gray-700">
-                    {row.record.notes}
-                  </p>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-400">
-                    No notes recorded.
-                  </p>
-                )}
-              </div>
+                  ) : row.record.notes ? (
+                    <p className="text-sm text-gray-700">{row.record.notes}</p>
+                  ) : (
+                    <p className="text-sm text-gray-400">No notes recorded.</p>
+                  )}
+                </div>
+              </details>
             ))}
           </div>
         </section>
