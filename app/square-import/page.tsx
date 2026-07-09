@@ -2,6 +2,16 @@ import Link from "next/link";
 
 import { importDailySalesRangeFromReporting } from "@/lib/square/importDailySalesRangeFromReporting";
 import { redirectIfNotAdmin, requireAdmin } from "@/lib/auth/admin";
+import { redirect } from "next/navigation";
+import { SquareImportSubmitButton } from "@/components/SquareImportSubmitButtom";
+
+type SquareImportPageProps = {
+  searchParams: Promise<{
+    success?: string;
+    startDate?: string;
+    endDate?: string;
+  }>;
+};
 
 async function importSquareSalesRange(formData: FormData) {
   "use server";
@@ -12,9 +22,20 @@ async function importSquareSalesRange(formData: FormData) {
   const endDate = String(formData.get("endDate") ?? "");
 
   await importDailySalesRangeFromReporting(startDate, endDate);
+
+  redirect(
+    `/square-import?success=1&startDate=${encodeURIComponent(
+      startDate,
+    )}&endDate=${encodeURIComponent(endDate)}`,
+  );
 }
 
-export default async function SquareImportPage() {
+export default async function SquareImportPage({
+  searchParams,
+}: SquareImportPageProps) {
+  const params = await searchParams;
+  const hasSuccessMessage = params.success === "1";
+
   await redirectIfNotAdmin();
 
   return (
@@ -37,6 +58,15 @@ export default async function SquareImportPage() {
           Back to dashboard
         </Link>
       </div>
+
+      {hasSuccessMessage ? (
+        <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          Square import finished successfully
+          {params.startDate && params.endDate
+            ? ` for ${params.startDate} through ${params.endDate}.`
+            : "."}
+        </div>
+      ) : null}
 
       <form
         action={importSquareSalesRange}
@@ -70,12 +100,7 @@ export default async function SquareImportPage() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="rounded bg-black px-4 py-2 font-medium text-white"
-        >
-          Import date range
-        </button>
+        <SquareImportSubmitButton />
       </form>
     </main>
   );
