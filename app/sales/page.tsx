@@ -29,7 +29,7 @@ function formatPercentage(value: number | null) {
 }
 
 export default async function SalesPage() {
-  await redirectIfNotAdmin();
+  await redirectIfNotAdmin("/sales");
   const salesRecords = await prisma.dailySales.findMany({
     orderBy: {
       businessDate: "desc",

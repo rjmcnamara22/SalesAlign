@@ -36,7 +36,7 @@ export default async function SquareImportPage({
   const params = await searchParams;
   const hasSuccessMessage = params.success === "1";
 
-  await redirectIfNotAdmin();
+  await redirectIfNotAdmin("/square-import");
 
   return (
     <main className="mx-auto max-w-2xl p-8">

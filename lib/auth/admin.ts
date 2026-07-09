@@ -97,10 +97,10 @@ export async function requireAdmin() {
   }
 }
 
-export async function redirectIfNotAdmin() {
+export async function redirectIfNotAdmin(redirectTo = "/sales") {
   const isAdmin = await isAdminSession();
 
   if (!isAdmin) {
-    redirect("/admin/login");
+    redirect(`/admin/login?redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 }
