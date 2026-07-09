@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DailySalesCreateForDateForm } from "@/components/DailySalesCreateForDateForm";
 import { DailySalesDeleteForm } from "@/components/DailySalesDeleteForm";
 import { DailySalesEditForm } from "@/components/DailySalesEditForm";
+import { DailySalesNotesForm } from "@/components/DailySalesNotesForm";
 import { prisma } from "@/lib/database/prisma";
 import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { isAdminSession } from "@/lib/auth/admin";
@@ -264,6 +265,49 @@ export default async function CalendarDayPage({ searchParams }: DayPageProps) {
           </p>
         )}
       </section>
+
+      {comparisonRows.length > 0 ? (
+        <section className="mt-8 rounded-lg border p-6">
+          <h2 className="text-2xl font-bold">Comparison notes</h2>
+
+          <div className="mt-4 grid gap-4">
+            {comparisonRows.map((row) => (
+              <div key={row.record.id} className="rounded border p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold">
+                      {row.date.getUTCFullYear()} comparison
+                    </h3>
+
+                    <p className="mt-1 text-sm text-gray-600">
+                      {dateFormatter.format(row.date)} ·{" "}
+                      {formatCurrency(row.record.salesTotalCents)}
+                    </p>
+                  </div>
+                </div>
+
+                {isAdmin ? (
+                  <div className="mt-4">
+                    <DailySalesNotesForm
+                      recordId={row.record.id}
+                      notes={row.record.notes}
+                      returnTo={`/calendar/day?date=${businessDateKey}`}
+                    />
+                  </div>
+                ) : row.record.notes ? (
+                  <p className="mt-4 text-sm text-gray-700">
+                    {row.record.notes}
+                  </p>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-400">
+                    No notes recorded.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-8 rounded-lg border p-6">
         <h2 className="text-2xl font-bold">Current day details</h2>

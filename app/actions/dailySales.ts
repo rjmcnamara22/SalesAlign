@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -244,4 +245,30 @@ export async function updateDailySales(
       message: "Unable to update the daily sales record.",
     };
   }
+}
+
+export async function updateDailySalesNotes(formData: FormData) {
+  await requireAdmin();
+
+  const recordId = String(formData.get("recordId") ?? "");
+  const notesValue = String(formData.get("notes") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "/calendar");
+
+  if (!recordId) {
+    throw new Error("Missing record ID");
+  }
+
+  await prisma.dailySales.update({
+    where: {
+      id: recordId,
+    },
+    data: {
+      notes: notesValue.length > 0 ? notesValue : null,
+    },
+  });
+
+  revalidatePath("/calendar");
+  revalidatePath("/calendar/day");
+
+  redirect(returnTo);
 }
