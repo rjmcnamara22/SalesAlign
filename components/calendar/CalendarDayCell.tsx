@@ -37,6 +37,16 @@ export function CalendarDayCell({
 }: CalendarDayCellProps) {
   const dayNumber = date.getDate();
   const dateKey = date.toISOString().slice(0, 10);
+  const previousYearComparisonsWithSales = comparisons.filter(
+    (comparison) => comparison.salesTotalCents !== null,
+  );
+
+  const beatAllPreviousYears =
+    salesTotalCents !== null &&
+    previousYearComparisonsWithSales.length > 0 &&
+    previousYearComparisonsWithSales.every(
+      (comparison) => salesTotalCents > comparison.salesTotalCents!,
+    );
 
   return (
     <Link
@@ -52,7 +62,11 @@ export function CalendarDayCell({
       <div className="mt-3 space-y-2 text-xs">
         <div>
           <p className="text-gray-500">Current</p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p
+            className={`text-sm font-semibold ${
+              beatAllPreviousYears ? "text-green-600" : "text-gray-900"
+            }`}
+          >
             {formatCurrency(salesTotalCents)}
           </p>
         </div>
