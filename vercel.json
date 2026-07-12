@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/import-square-sales",
-      "schedule": "15 14 * * *"
+      "schedule": "0 14 * * *"
     }
   ]
 }
