@@ -9,29 +9,70 @@ import { prisma } from "@/lib/database/prisma";
 
 import { requireAdmin } from "@/lib/auth/admin";
 
+const requiredCurrencySchema = z
+  .preprocess((value) => {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    return value;
+  }, z.string())
+  .transform((value) => value.trim())
+  .refine((value) => value.length > 0, {
+    message: "Sales total is required",
+  })
+  .refine((value) => Number.isFinite(Number(value)), {
+    message: "Sales total must be a valid number",
+  })
+  .transform((value) => Number(value))
+  .refine((value) => value >= 0, {
+    message: "Sales total cannot be negative",
+  });
+
+const optionalCurrencySchema = z
+  .preprocess((value) => {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    return value;
+  }, z.string())
+  .transform((value) => value.trim())
+  .refine((value) => value === "" || Number.isFinite(Number(value)), {
+    message: "Net sales must be a valid number",
+  })
+  .transform((value) => (value === "" ? "" : Number(value)))
+  .refine((value) => value === "" || value >= 0, {
+    message: "Net sales cannot be negative",
+  });
+
+const optionalTransactionCountSchema = z
+  .preprocess((value) => {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    return value;
+  }, z.string())
+  .transform((value) => value.trim())
+  .refine((value) => value === "" || Number.isInteger(Number(value)), {
+    message: "Transaction count must be a whole number",
+  })
+  .transform((value) => (value === "" ? "" : Number(value)))
+  .refine((value) => value === "" || value >= 0, {
+    message: "Transaction count cannot be negative",
+  });
+
 const dailySalesSchema = z.object({
   businessDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid business date"),
 
-  salesTotal: z.coerce.number().min(0, "Sales total cannot be negative"),
+  salesTotal: requiredCurrencySchema,
 
-  netSales: z
-    .union([
-      z.literal(""),
-      z.coerce.number().min(0, "Net sales cannot be negative"),
-    ])
-    .optional(),
+  netSales: optionalCurrencySchema.optional(),
 
-  transactionCount: z
-    .union([
-      z.literal(""),
-      z.coerce
-        .number()
-        .int("Transaction count must be a whole number")
-        .min(0, "Transaction count cannot be negative"),
-    ])
-    .optional(),
+  transactionCount: optionalTransactionCountSchema.optional(),
 
   notes: z.string().trim().max(500).optional(),
 });
@@ -161,24 +202,11 @@ export async function deleteDailySales(
 const updateDailySalesSchema = z.object({
   id: z.string().min(1, "Missing sales record ID"),
 
-  salesTotal: z.coerce.number().min(0, "Sales total cannot be negative"),
+  salesTotal: requiredCurrencySchema,
 
-  netSales: z
-    .union([
-      z.literal(""),
-      z.coerce.number().min(0, "Net sales cannot be negative"),
-    ])
-    .optional(),
+  netSales: optionalCurrencySchema.optional(),
 
-  transactionCount: z
-    .union([
-      z.literal(""),
-      z.coerce
-        .number()
-        .int("Transaction count must be a whole number")
-        .min(0, "Transaction count cannot be negative"),
-    ])
-    .optional(),
+  transactionCount: optionalTransactionCountSchema.optional(),
 
   notes: z.string().trim().max(500).optional(),
 });
