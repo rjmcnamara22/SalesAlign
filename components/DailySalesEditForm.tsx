@@ -52,7 +52,7 @@ export function DailySalesEditForm({ record }: DailySalesEditFormProps) {
           min="0"
           step="0.01"
           required
-          defaultValue={centsToDollars(record.salesTotalCents)}
+          defaultValue={(record.salesTotalCents / 100).toFixed(2)}
           className="w-full rounded border px-3 py-2"
         />
       </div>

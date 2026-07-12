@@ -14,7 +14,7 @@ const dailySalesSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid business date"),
 
-  grossSales: z.coerce.number().min(0, "Gross sales cannot be negative"),
+  salesTotal: z.coerce.number().min(0, "Sales total cannot be negative"),
 
   netSales: z
     .union([
@@ -49,7 +49,7 @@ export async function createDailySales(
 
   const result = dailySalesSchema.safeParse({
     businessDate: formData.get("businessDate"),
-    grossSales: formData.get("grossSales"),
+    salesTotal: formData.get("salesTotal"),
     netSales: formData.get("netSales"),
     transactionCount: formData.get("transactionCount"),
     notes: formData.get("notes"),
@@ -62,14 +62,14 @@ export async function createDailySales(
     };
   }
 
-  const { businessDate, grossSales, netSales, transactionCount, notes } =
+  const { businessDate, salesTotal, netSales, transactionCount, notes } =
     result.data;
 
   try {
     await prisma.dailySales.create({
       data: {
         businessDate: new Date(`${businessDate}T00:00:00.000Z`),
-        salesTotalCents: Math.round(grossSales * 100),
+        salesTotalCents: Math.round(salesTotal * 100),
         netSalesCents:
           netSales === "" || netSales === undefined
             ? null
@@ -161,7 +161,7 @@ export async function deleteDailySales(
 const updateDailySalesSchema = z.object({
   id: z.string().min(1, "Missing sales record ID"),
 
-  grossSales: z.coerce.number().min(0, "Gross sales cannot be negative"),
+  salesTotal: z.coerce.number().min(0, "Sales total cannot be negative"),
 
   netSales: z
     .union([
@@ -195,7 +195,7 @@ export async function updateDailySales(
   await requireAdmin();
   const result = updateDailySalesSchema.safeParse({
     id: formData.get("id"),
-    grossSales: formData.get("grossSales"),
+    salesTotal: formData.get("salesTotal"),
     netSales: formData.get("netSales"),
     transactionCount: formData.get("transactionCount"),
     notes: formData.get("notes"),
@@ -208,7 +208,7 @@ export async function updateDailySales(
     };
   }
 
-  const { id, grossSales, netSales, transactionCount, notes } = result.data;
+  const { id, salesTotal, netSales, transactionCount, notes } = result.data;
 
   try {
     await prisma.dailySales.update({
@@ -216,7 +216,7 @@ export async function updateDailySales(
         id,
       },
       data: {
-        salesTotalCents: Math.round(grossSales * 100),
+        salesTotalCents: Math.round(salesTotal * 100),
         netSalesCents:
           netSales === "" || netSales === undefined
             ? null
