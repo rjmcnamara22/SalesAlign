@@ -1,30 +1,8 @@
 import { importDailySalesFromReporting } from "@/lib/square/importDailySalesFromReporting";
+import { getLatestCompletedReportingDate } from "@/lib/reporting/getLatestCompletedReportingDate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function formatEasternDate(date: Date) {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-
-  return formatter.format(date);
-}
-
-function subtractDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setUTCDate(nextDate.getUTCDate() - days);
-  return nextDate;
-}
-
-function getPreviousReportingDate() {
-  const now = new Date();
-
-  return formatEasternDate(subtractDays(now, 1));
-}
 
 function isAuthorizedCronRequest(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -52,7 +30,7 @@ export async function GET(request: Request) {
   const businessDate =
     requestedDate && isValidDateString(requestedDate)
       ? requestedDate
-      : getPreviousReportingDate();
+      : getLatestCompletedReportingDate();
 
   const result = await importDailySalesFromReporting(businessDate);
 

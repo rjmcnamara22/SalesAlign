@@ -1,6 +1,9 @@
 import Link from "next/link";
 
 import { importDailySalesRangeFromReporting } from "@/lib/square/importDailySalesRangeFromReporting";
+import { getLatestCompletedReportingDate } from "@/lib/reporting/getLatestCompletedReportingDate";
+import { importDailySalesFromReporting } from "@/lib/square/importDailySalesFromReporting";
+import { LatestReportingDayImportButton } from "@/components/LatestReportingDayImportButton";
 import { redirectIfNotAdmin, requireAdmin } from "@/lib/auth/admin";
 import { redirect } from "next/navigation";
 import { SquareImportSubmitButton } from "@/components/SquareImportSubmitButtom";
@@ -8,6 +11,7 @@ import { SquareImportSubmitButton } from "@/components/SquareImportSubmitButtom"
 type SquareImportPageProps = {
   searchParams: Promise<{
     success?: string;
+    type?: string;
     startDate?: string;
     endDate?: string;
   }>;
@@ -27,6 +31,22 @@ async function importSquareSalesRange(formData: FormData) {
     `/square-import?success=1&startDate=${encodeURIComponent(
       startDate,
     )}&endDate=${encodeURIComponent(endDate)}`,
+  );
+}
+
+async function importLatestCompletedReportingDay() {
+  "use server";
+
+  await requireAdmin();
+
+  const reportingDate = getLatestCompletedReportingDate();
+
+  await importDailySalesFromReporting(reportingDate);
+
+  redirect(
+    `/square-import?success=1&type=latest&startDate=${encodeURIComponent(
+      reportingDate,
+    )}&endDate=${encodeURIComponent(reportingDate)}`,
   );
 }
 
@@ -61,12 +81,28 @@ export default async function SquareImportPage({
 
       {hasSuccessMessage ? (
         <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-          Square import finished successfully
+          {params.type === "latest"
+            ? "Latest completed reporting day imported successfully"
+            : "Square import finished successfully"}
           {params.startDate && params.endDate
-            ? ` for ${params.startDate} through ${params.endDate}.`
+            ? params.startDate === params.endDate
+              ? ` for ${params.startDate}.`
+              : ` for ${params.startDate} through ${params.endDate}.`
             : "."}
         </div>
       ) : null}
+
+      <section className="rounded-lg border p-6">
+        <h2 className="text-xl font-bold">Quick Import</h2>
+
+        <p className="mt-2 text-sm text-gray-600">
+          Import the latest completed 9:00 AM–8:59 AM ET Square reporting day.
+        </p>
+
+        <form action={importLatestCompletedReportingDay} className="mt-4">
+          <LatestReportingDayImportButton />
+        </form>
+      </section>
 
       <form
         action={importSquareSalesRange}
