@@ -2,13 +2,28 @@ import { subDays } from "date-fns";
 
 import { prisma } from "@/lib/database/prisma";
 
+import { getBearerToken, verifyMobileAccessToken } from "@/lib/auth/mobileAuth";
+
 const DAYS_IN_52_WEEKS = 364;
 
 function formatDateOnly(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const accessToken = getBearerToken(request.headers.get("authorization"));
+
+  if (!accessToken || !verifyMobileAccessToken(accessToken)) {
+    return Response.json(
+      {
+        error: "Unauthorized.",
+      },
+      {
+        status: 401,
+      },
+    );
+  }
+
   try {
     const latestSales = await prisma.dailySales.findFirst({
       orderBy: {
