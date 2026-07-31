@@ -61,6 +61,7 @@ export default async function Home() {
 
   const businessDate = getPreviousReportingDate();
   const comparableDate = getComparableDate(businessDate, 1);
+  const comparableYear = comparableDate.getUTCFullYear();
 
   const records = await prisma.dailySales.findMany({
     where: {
@@ -197,7 +198,7 @@ export default async function Home() {
             {formatCurrency(comparableSalesCents)}
           </p>
           <p className="mt-3 text-sm text-gray-600">
-            Weekday-aligned prior year
+            Sales from {comparableYear}
           </p>
         </div>
 
@@ -210,9 +211,7 @@ export default async function Home() {
           >
             {formatCurrency(differenceCents)}
           </p>
-          <p className="mt-3 text-sm text-gray-600">
-            Versus weekday-aligned prior year
-          </p>
+          <p className="mt-3 text-sm text-gray-600">Versus {comparableYear}</p>
         </div>
 
         <div className="rounded-lg border p-6">
@@ -227,7 +226,7 @@ export default async function Home() {
               : `${percentageChange.toFixed(1)}%`}
           </p>
           <p className="mt-3 text-sm text-gray-600">
-            Based on comparable day sales
+            Based on {comparableYear}
           </p>
         </div>
       </section>
@@ -236,7 +235,7 @@ export default async function Home() {
         <Link href="/calendar" className="rounded-lg border p-6">
           <h2 className="text-2xl font-bold">Calendar</h2>
           <p className="mt-3 text-gray-700">
-            View daily sales in a monthly calendar with multi-year weekday
+            View the daily sales in a monthly calendar that displays weekday
             comparisons.
           </p>
         </Link>
@@ -244,7 +243,7 @@ export default async function Home() {
         <Link href="/sales" className="rounded-lg border p-6">
           <h2 className="text-2xl font-bold">Sales Entry</h2>
           <p className="mt-3 text-gray-700">
-            Admin-only tools for manually reviewing, adding, or correcting daily
+            Admin-only tools for manually reviewing, adding, or editing daily
             sales records.
           </p>
         </Link>

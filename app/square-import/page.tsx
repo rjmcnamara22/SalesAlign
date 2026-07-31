@@ -80,7 +80,7 @@ export default async function SquareImportPage({
       </div>
 
       {hasSuccessMessage ? (
-        <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+        <div className="mb-6 rounded border border-green-200 bg-green-50 p-4 text-sm text-green-700">
           {params.type === "latest"
             ? "Latest completed reporting day imported successfully"
             : "Square import finished successfully"}
