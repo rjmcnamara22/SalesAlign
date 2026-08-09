@@ -128,23 +128,26 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            {[
-              "Next.js",
-              "TypeScript",
-              "Prisma",
-              "PostgreSQL",
-              "Square Reporting API",
-              "Vercel Cron",
-              "Admin Controls",
-            ].map((technology) => (
-              <span
-                key={technology}
-                className="rounded-full border px-3 py-1 text-sm text-gray-700"
-              >
-                {technology}
-              </span>
-            ))}
+          <div className="mt-6 grid gap-3 text-sm text-gray-700 md:grid-cols-2">
+            <div>
+              <span className="font-semibold text-gray-900">Frontend:</span>{" "}
+              Next.js, React, TypeScript, Tailwind CSS
+            </div>
+
+            <div>
+              <span className="font-semibold text-gray-900">Backend:</span>{" "}
+              Next.js server actions, API routes, Prisma
+            </div>
+
+            <div>
+              <span className="font-semibold text-gray-900">Database:</span>{" "}
+              PostgreSQL (Hosted on Neon)
+            </div>
+
+            <div>
+              <span className="font-semibold text-gray-900">Integrations:</span>{" "}
+              Square Reporting API, Vercel Cron
+            </div>
           </div>
         </section>
       ) : null}
