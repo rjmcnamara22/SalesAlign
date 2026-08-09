@@ -62,13 +62,20 @@ export function CalendarDayCell({
       <div className="mt-3 space-y-2 text-xs">
         <div>
           <p className="text-gray-500">Current</p>
-          <p
-            className={`text-sm font-semibold ${
-              beatAllPreviousYears ? "text-green-600" : "text-gray-900"
-            }`}
-          >
-            {formatCurrency(salesTotalCents)}
-          </p>
+
+          {salesTotalCents === null && isCurrentMonth ? (
+            <p className="text-sm font-medium text-gray-400">
+              No imported record
+            </p>
+          ) : (
+            <p
+              className={`text-sm font-semibold ${
+                beatAllPreviousYears ? "text-green-600" : "text-gray-900"
+              }`}
+            >
+              {formatCurrency(salesTotalCents)}
+            </p>
+          )}
         </div>
 
         {comparisons.length > 0 ? (
