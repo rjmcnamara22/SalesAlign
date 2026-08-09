@@ -6,6 +6,8 @@ import { getComparableDate } from "@/lib/comparison/getComparableDate";
 import { isAdminSession } from "@/lib/auth/admin";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 
+import { getLatestCompletedReportingDate } from "@/lib/reporting/getLatestCompletedReportingDate";
+
 export const dynamic = "force-dynamic";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -20,6 +22,38 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   timeZone: "UTC",
 });
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "America/New_York",
+});
+
+const latestSquareRecord = await prisma.dailySales.findFirst({
+  where: {
+    source: "SQUARE",
+  },
+  orderBy: {
+    businessDate: "desc",
+  },
+  select: {
+    businessDate: true,
+    updatedAt: true,
+  },
+});
+
+const latestCompletedReportingDateKey = getLatestCompletedReportingDate();
+
+const latestImportedDateKey = latestSquareRecord
+  ? latestSquareRecord.businessDate.toISOString().slice(0, 10)
+  : null;
+
+const isDataCurrent =
+  latestImportedDateKey !== null &&
+  latestImportedDateKey >= latestCompletedReportingDateKey;
 
 function formatCurrency(cents: number) {
   return currencyFormatter.format(cents / 100);
@@ -231,6 +265,62 @@ export default async function Home() {
           <p className="mt-3 text-sm text-gray-600">
             Based on {comparableYear}
           </p>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">Data status</h2>
+
+            <p className="mt-2 text-gray-600">
+              Tracks whether the latest completed Square reporting day has been
+              imported.
+            </p>
+          </div>
+
+          <span
+            className={`rounded px-3 py-1 text-sm font-medium ${
+              isDataCurrent
+                ? "bg-green-50 text-green-700"
+                : "bg-yellow-50 text-yellow-700"
+            }`}
+          >
+            {isDataCurrent ? "Current" : "Update needed"}
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div>
+            <p className="text-sm text-gray-600">
+              Latest imported reporting day
+            </p>
+            <p className="mt-1 font-semibold">
+              {latestSquareRecord
+                ? dateFormatter.format(latestSquareRecord.businessDate)
+                : "No Square imports found"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-600">
+              Expected latest reporting day
+            </p>
+            <p className="mt-1 font-semibold">
+              {dateFormatter.format(
+                new Date(`${latestCompletedReportingDateKey}T00:00:00.000Z`),
+              )}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-600">Last updated</p>
+            <p className="mt-1 font-semibold">
+              {latestSquareRecord
+                ? dateTimeFormatter.format(latestSquareRecord.updatedAt)
+                : "N/A"}
+            </p>
+          </div>
         </div>
       </section>
 
